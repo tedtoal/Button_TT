@@ -19,7 +19,8 @@
       to be drawn, the background color remains, applied to outline, fill, label
     - w and h (width and height of button) changed from unsigned to signed,
       and if they are specified non-positive AND IF gfx is not 0, then to get
-      actual button width and height, LABEL WIDTH/HEIGHT is ADDED TO ABSOLUTE w/h
+      actual button width and height, LABEL WIDTH/HEIGHT is ADDED TO ABSOLUTE
+  w/h
     - made initButton() compute width and height and lower-left coords of the
         button label and store it in class variables for use by drawButton()
         etc. Corrected the code for use of the text baseline in print().
@@ -42,16 +43,16 @@ protected:
   uint8_t _textsize_x;
   uint8_t _textsize_y;
   uint16_t _textcolor;
-  const char* _textalign;
-  const GFXfont* _f;
-  char* _label;
+  const char *_textalign;
+  const GFXfont *_f;
+  char *_label;
   bool _degreeSym;
   int16_t _rCorner;
   uint16_t _w_label, _h_label;
   // Degree symbol data:
-  //  _dx_degree: distance from degree initial cursor to left of degree bound box
-  //  _dy_degree: distance from degree initial cursor to top of degree bound box
-  //  _xa_degree: amount to advance y-coordinate of cursor for degree symbol
+  //  _dx_degree: distance from degree initial cursor to left of degree bound
+  //  box _dy_degree: distance from degree initial cursor to top of degree bound
+  //  box _xa_degree: amount to advance y-coordinate of cursor for degree symbol
   //  _d_degree: diameter of degree symbol (its width AND height)
   //  _rO_degree: outer radius of degree symbol
   //  _rI_degree: inner radius of degree symbol
@@ -84,10 +85,10 @@ protected:
   // shifted left or right slightly when the first character starts slightly
   // left or right of the cursor position (which some characters do), and the
   // text will be shifted up if it contains any characters with descenders that
-  // extend below the baseline. The final cursor position is (X1-dX+dXcF, Y1-dY),
-  // which is NOT the same as (dX+w, dY+h). The cursor position to use in order
-  // to print additional text after the label, if the upper-left corner of the
-  // text is at position (X1, Y1), is:
+  // extend below the baseline. The final cursor position is (X1-dX+dXcF,
+  // Y1-dY), which is NOT the same as (dX+w, dY+h). The cursor position to use
+  // in order to print additional text after the label, if the upper-left corner
+  // of the text is at position (X1, Y1), is:
   //  (X1-dX+dXcF, Y1-dY)
   // The position of the lower-right corner of the text bounding box, (X2, Y2),
   // is: (X1+w, Y1+h)
@@ -100,8 +101,8 @@ protected:
   //  new w = dXcF-dX+DX+W = new X2 - X1
   //  new h = -dY+max(0, DY+H) = new Y2 - Y1
   /**************************************************************************/
-  void getLabelBounds(const char *str, int16_t& dX, int16_t& dY,
-                      uint16_t& w, uint16_t& h, int16_t& dXcF);
+  void getLabelBounds(const char *str, int16_t &dX, int16_t &dY, uint16_t &w,
+                      uint16_t &h, int16_t &dXcF);
 
   /**************************************************************************/
   // Given a range of integer values, determine the value in that range that,
@@ -117,14 +118,14 @@ protected:
   // returned value might be 133 and returned string "+133".
   /**************************************************************************/
   int32_t getWidestValue(int32_t minValue, int32_t maxValue, char S[12],
-                         uint16_t& w, uint16_t& h, bool showPlus=false);
+                         uint16_t &w, uint16_t &h, bool showPlus = false);
 
   /**************************************************************************/
   // Compute degree symbol delta x/y from cursor position to upper-left corner,
   // cursor x-position advance amount, diameter, and outer and inner radius.
   /**************************************************************************/
-  void getDegreeSymSize(int8_t& dx, int8_t& dy, int8_t& xa, uint8_t& d,
-    uint8_t& rO, uint8_t& rI);
+  void getDegreeSymSize(int8_t &dx, int8_t &dy, int8_t &xa, uint8_t &d,
+                        uint8_t &rO, uint8_t &rI);
 
   /**************************************************************************/
   // Update the arguments that are references by adding in the effect of putting
@@ -133,28 +134,31 @@ protected:
   // requires that _dx_degree, _dy_degree, _xa_degree, and _d_degree have been
   // set correctly for the degree symbol.
   /**************************************************************************/
-  void updateLabelSizeForDegreeSymbol(int16_t dX,
-    int16_t& dY, int16_t& dXcF, uint16_t& w, uint16_t& h);
+  void updateLabelSizeForDegreeSymbol(int16_t dX, int16_t &dY, int16_t &dXcF,
+                                      uint16_t &w, uint16_t &h);
 
 public:
   /**************************************************************************/
   /*!
    @brief    Constructor.
-   @param    name         String giving a name to the button, for debugging purposes only!
-   @param    (others)     Remaining (optional) arguments are the same as initButton() below
+   @param    name         String giving a name to the button, for debugging
+   purposes only!
+   @param    (others)     Remaining (optional) arguments are the same as
+   initButton() below
   */
   /**************************************************************************/
-  Button_TT(const char* name, Adafruit_GFX* gfx=0, const char* align="C",
-                  int16_t x=0, int16_t y=0, int16_t w=0, int16_t h=0,
-                  uint16_t outlineColor=0, uint16_t fillColor=0,
-                  uint16_t textColor=0, const char* textAlign="C", char* label=0,
-                  bool degreeSym=false, uint8_t textSize_x=1, uint8_t textSize_y=1,
-                  const GFXfont* f=NULL, int16_t rCorner=0,
-                  uint8_t expU=0, uint8_t expD=0, uint8_t expL=0, uint8_t expR=0) :
-            Button_TT_Base(name) {
+  Button_TT(const char *name, Adafruit_GFX *gfx = 0, const char *align = "C",
+            int16_t x = 0, int16_t y = 0, int16_t w = 0, int16_t h = 0,
+            uint16_t outlineColor = 0, uint16_t fillColor = 0,
+            uint16_t textColor = 0, const char *textAlign = "C",
+            char *label = 0, bool degreeSym = false, uint8_t textSize_x = 1,
+            uint8_t textSize_y = 1, const GFXfont *f = NULL,
+            int16_t rCorner = 0, uint8_t expU = 0, uint8_t expD = 0,
+            uint8_t expL = 0, uint8_t expR = 0)
+      : Button_TT_Base(name) {
     initButton(gfx, align, x, y, w, h, outlineColor, fillColor, textColor,
-      textAlign, label, degreeSym, textSize_x, textSize_y, f, rCorner,
-      expU, expD, expL, expR);
+               textAlign, label, degreeSym, textSize_x, textSize_y, f, rCorner,
+               expU, expD, expL, expR);
   }
 
   /**************************************************************************/
@@ -177,33 +181,40 @@ public:
                      where T=top, B=bottom, L=left, R=right, C=center, C=CC
    @param    x       The X coordinate of the button, relative to 'align'
    @param    y       The X coordinate of the button, relative to 'align'
-   @param    w       Width of the button, non-positive to compute width from label and add abs(w)
-   @param    h       Height of the button, non-positive to compute height from label and add abs(h)
+   @param    w       Width of the button, non-positive to compute width from
+   label and add abs(w)
+   @param    h       Height of the button, non-positive to compute height from
+   label and add abs(h)
    @param    outlineColor See Button_TT_Base::initButton()
    @param    fillColor    See Button_TT_Base::initButton()
    @param    textColor    Color of the button label (16-bit 5-6-5 standard)
-   @param    textAlign    Like 'align' but gives alignment for label, 1st char = up/down alignment, 2nd = left/right
-   @param    label        String of the text inside the button, should be the largest
-                          possible label if w or h is negative to ensure all possible
-                          labels will fit in the size that is automatically computed
-   @param    degreeSym    If true, a degree symbol is drawn at the end of the label
+   @param    textAlign    Like 'align' but gives alignment for label, 1st char =
+   up/down alignment, 2nd = left/right
+   @param    label        String of the text inside the button, should be the
+   largest possible label if w or h is negative to ensure all possible labels
+   will fit in the size that is automatically computed
+   @param    degreeSym    If true, a degree symbol is drawn at the end of the
+   label
    @param    textSize_x   Font magnification in X-axis of the label text
    @param    textSize_y   Font magnification in Y-axis of the label text
    @param    f       Custom font to use for the label, NULL for default font
-   @param    rCorner Radius of rounded corners of button outline rectangle, 0 for none
+   @param    rCorner Radius of rounded corners of button outline rectangle, 0
+   for none
    @param    expU    See Button_TT_Base::initButton()
    @param    expD    See Button_TT_Base::initButton()
    @param    expL    See Button_TT_Base::initButton()
    @param    expR    See Button_TT_Base::initButton()
   */
   /**************************************************************************/
-  void initButton(Adafruit_GFX* gfx=0, const char* align="C",
-                  int16_t x=0, int16_t y=0, int16_t w=0, int16_t h=0,
-                  uint16_t outlineColor=0, uint16_t fillColor=0, uint16_t textColor=0,
-                  const char* textAlign="C", char* label=0, bool degreeSym=false,
-                  uint8_t textSize_x=1, uint8_t textSize_y=1,
-                  const GFXfont* f=NULL, int16_t rCorner=0,
-                  uint8_t expU=0, uint8_t expD=0, uint8_t expL=0, uint8_t expR=0);
+  void initButton(Adafruit_GFX *gfx = 0, const char *align = "C", int16_t x = 0,
+                  int16_t y = 0, int16_t w = 0, int16_t h = 0,
+                  uint16_t outlineColor = 0, uint16_t fillColor = 0,
+                  uint16_t textColor = 0, const char *textAlign = "C",
+                  char *label = 0, bool degreeSym = false,
+                  uint8_t textSize_x = 1, uint8_t textSize_y = 1,
+                  const GFXfont *f = NULL, int16_t rCorner = 0,
+                  uint8_t expU = 0, uint8_t expD = 0, uint8_t expL = 0,
+                  uint8_t expR = 0);
 
   /**************************************************************************/
   /*!
@@ -211,7 +222,7 @@ public:
    @returns  The current text color
   */
   /**************************************************************************/
-  uint16_t getTextColor(void) { return(_textcolor); }
+  uint16_t getTextColor(void) { return (_textcolor); }
 
   /**************************************************************************/
   /*!
@@ -228,7 +239,7 @@ public:
    @returns  The label alignment setting
   */
   /**************************************************************************/
-  const char* getTextAlign(void) { return(_textalign); }
+  const char *getTextAlign(void) { return (_textalign); }
 
   /**************************************************************************/
   /*!
@@ -237,7 +248,7 @@ public:
    @returns  true if new alignment is different from old
   */
   /**************************************************************************/
-  bool setTextAlign(const char* textAlign);
+  bool setTextAlign(const char *textAlign);
 
   /**************************************************************************/
   /*!
@@ -246,8 +257,9 @@ public:
    @param    textSize_y  The current y-direction text size is returned here
   */
   /**************************************************************************/
-  void getTextSize(uint8_t& textSize_x, uint8_t& textSize_y) {
-    textSize_x = _textsize_x; textSize_y = _textsize_y;
+  void getTextSize(uint8_t &textSize_x, uint8_t &textSize_y) {
+    textSize_x = _textsize_x;
+    textSize_y = _textsize_y;
   }
 
   /**************************************************************************/
@@ -266,7 +278,7 @@ public:
    @returns  The current label font
   */
   /**************************************************************************/
-  const GFXfont* getFont(void) { return(_f); }
+  const GFXfont *getFont(void) { return (_f); }
 
   /**************************************************************************/
   /*!
@@ -275,7 +287,7 @@ public:
    @returns  true if new font is different from old
   */
   /**************************************************************************/
-  bool setFont(const GFXfont* f=NULL);
+  bool setFont(const GFXfont *f = NULL);
 
   /**************************************************************************/
   /*!
@@ -283,7 +295,7 @@ public:
    @returns  The current label text
   */
   /**************************************************************************/
-  const char* getLabel(void) { return(_label); }
+  const char *getLabel(void) { return (_label); }
 
   /**************************************************************************/
   /*!
@@ -296,15 +308,16 @@ public:
              memory is simply reused
   */
   /**************************************************************************/
-  bool setLabel(const char* label);
+  bool setLabel(const char *label);
 
   /**************************************************************************/
   /*!
-   @brief    Get flag indicating whether a degree symbol is drawn after the label
+   @brief    Get flag indicating whether a degree symbol is drawn after the
+   label
    @returns  true if degree symbol is drawn, else false
   */
   /**************************************************************************/
-  bool getDegreeSymbol(void) { return(_degreeSym); }
+  bool getDegreeSymbol(void) { return (_degreeSym); }
 
   /**************************************************************************/
   /*!
@@ -326,8 +339,7 @@ public:
    @returns  true if button was drawn
   */
   /**************************************************************************/
-  bool setLabelAndDrawIfChanged(const char* label, bool forceDraw = false);
-
+  bool setLabelAndDrawIfChanged(const char *label, bool forceDraw = false);
 };
 
 #endif // Button_TT_h

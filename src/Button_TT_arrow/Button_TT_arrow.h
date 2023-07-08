@@ -15,29 +15,32 @@
 #include <Arduino.h>
 #include <Button_TT_Base.h>
 
-class Button_TT_arrow :  public Button_TT_Base {
+class Button_TT_arrow : public Button_TT_Base {
 
 protected:
   char _orient;
-  int16_t _x0, _y0, _x1, _y1, _x2, _y2; // Triangle vertices, 0=tip, CW for 1 and 2
+  int16_t _x0, _y0, _x1, _y1, _x2,
+      _y2;           // Triangle vertices, 0=tip, CW for 1 and 2
   uint16_t _s1, _s2; // Lengths of triangle sides, one side is _s1, 2 are _s2.
 
 public:
   /**************************************************************************/
   /*!
    @brief    Constructor.
-   @param    name         String giving a name to the button, for debugging purposes only!
-   @param    (others)     Remaining (optional) arguments are the same as initButton() below
+   @param    name         String giving a name to the button, for debugging
+   purposes only!
+   @param    (others)     Remaining (optional) arguments are the same as
+   initButton() below
   */
   /**************************************************************************/
-  Button_TT_arrow(const char* name, Adafruit_GFX* gfx=0,
-                  char orient='U', const char* align="C",
-                  int16_t x=0, int16_t y=0, uint16_t s1=0, uint16_t s2=0,
-                  uint16_t outlineColor=0, uint16_t fillColor=0,
-                  uint8_t expU=0, uint8_t expD=0, uint8_t expL=0, uint8_t expR=0) :
-            Button_TT_Base(name) {
-    initButton(gfx, orient, align, x, y, s1, s2, outlineColor, fillColor,
-      expU, expD, expL, expR);
+  Button_TT_arrow(const char *name, Adafruit_GFX *gfx = 0, char orient = 'U',
+                  const char *align = "C", int16_t x = 0, int16_t y = 0,
+                  uint16_t s1 = 0, uint16_t s2 = 0, uint16_t outlineColor = 0,
+                  uint16_t fillColor = 0, uint8_t expU = 0, uint8_t expD = 0,
+                  uint8_t expL = 0, uint8_t expR = 0)
+      : Button_TT_Base(name) {
+    initButton(gfx, orient, align, x, y, s1, s2, outlineColor, fillColor, expU,
+               expD, expL, expR);
   }
 
   /**************************************************************************/
@@ -48,7 +51,8 @@ public:
    @param    align   See Button_TT::initButton()
    @param    x       See Button_TT::initButton()
    @param    y       See Button_TT::initButton()
-   @param    s1      Length of the triangle that is opposite vertex at end of arrow
+   @param    s1      Length of the triangle that is opposite vertex at end of
+   arrow
    @param    s2      Length of other two triangle sides
    @param    outlineColor See Button_TT_Base::initButton()
    @param    fillColor    See Button_TT_Base::initButton()
@@ -58,11 +62,11 @@ public:
    @param    expR    See Button_TT_Base::initButton()
   */
   /**************************************************************************/
-  void initButton(Adafruit_GFX* gfx=0,
-                  char orient='U', const char* align="C",
-                  int16_t x=0, int16_t y=0, uint16_t s1=0, uint16_t s2=0,
-                  uint16_t outlineColor=0, uint16_t fillColor=0,
-                  uint8_t expU=0, uint8_t expD=0, uint8_t expL=0, uint8_t expR=0);
+  void initButton(Adafruit_GFX *gfx = 0, char orient = 'U',
+                  const char *align = "C", int16_t x = 0, int16_t y = 0,
+                  uint16_t s1 = 0, uint16_t s2 = 0, uint16_t outlineColor = 0,
+                  uint16_t fillColor = 0, uint8_t expU = 0, uint8_t expD = 0,
+                  uint8_t expL = 0, uint8_t expR = 0);
 
   /**************************************************************************/
   /*!
@@ -70,7 +74,7 @@ public:
    @returns  Single character giving orientation, U, D, L, or R
   */
   /**************************************************************************/
-  char getOrientation(void) { return(_orient); }
+  char getOrientation(void) { return (_orient); }
 
   /**************************************************************************/
   /*!
@@ -81,7 +85,6 @@ public:
   /**************************************************************************/
   using Button_TT_Base::drawButton;
   virtual void drawButton(bool inverted) override;
-
 };
 
 #endif // Button_TT_arrow_h

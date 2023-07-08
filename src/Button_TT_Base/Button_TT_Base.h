@@ -20,10 +20,10 @@
 #ifndef Button_TT_Base_h
 #define Button_TT_Base_h
 
-#include <Arduino.h>
 #include <Adafruit_GFX.h>
+#include <Arduino.h>
 
-# Set BUTTON_TT_DBG to 1 to enable debug output via monitor_printf(), 0 for not.
+// Set BUTTON_TT_DBG to 1 to enable debug output via monitor_printf(), 0 for not .
 #define BUTTON_TT_DBG 0
 
 // Use this color to avoid having outline, button background, or label drawn.
@@ -39,15 +39,16 @@ const uint16_t TRANSPARENT_COLOR = 0x0841;
 class Button_TT_Base {
 
 protected:
-  const char* _name;
-  Adafruit_GFX* _gfx;
+  const char *_name;
+  Adafruit_GFX *_gfx;
   int16_t _xL, _yT; // Coordinates of top-left corner
   uint16_t _w, _h;
   uint16_t _expU, _expD, _expL, _expR;
   uint16_t _outlinecolor, _fillcolor;
   int16_t _delta;
   bool _inverted;
-  bool _changedSinceLastDrawn; // Set TRUE if any visible attribute changes, cleared when button drawn
+  bool _changedSinceLastDrawn; // Set TRUE if any visible attribute changes,
+                               // cleared when button drawn
   bool _isPressed;
   bool _returnedLastAction;
 
@@ -55,18 +56,21 @@ public:
   /**************************************************************************/
   /*!
    @brief    Constructor.
-   @param    name         String giving a name to the button, for debugging purposes only!
-   @param    (others)     Remaining (optional) arguments are the same as initButton() below
+   @param    name         String giving a name to the button, for debugging
+   purposes only!
+   @param    (others)     Remaining (optional) arguments are the same as
+   initButton() below
   */
   /**************************************************************************/
-  Button_TT_Base(const char* name, Adafruit_GFX* gfx=0,
-                  int16_t xL=0, int16_t yT=0, uint16_t w=0, uint16_t h=0,
-                  uint16_t outlineColor=0, uint16_t fillColor=0,
-                  uint8_t expU=0, uint8_t expD=0, uint8_t expL=0, uint8_t expR=0) :
-            _name(name) {
-    initButton(gfx, xL, yT, w, h, outlineColor, fillColor, expU, expD, expL, expR);
+  Button_TT_Base(const char *name, Adafruit_GFX *gfx = 0, int16_t xL = 0,
+                 int16_t yT = 0, uint16_t w = 0, uint16_t h = 0,
+                 uint16_t outlineColor = 0, uint16_t fillColor = 0,
+                 uint8_t expU = 0, uint8_t expD = 0, uint8_t expL = 0,
+                 uint8_t expR = 0)
+      : _name(name) {
+    initButton(gfx, xL, yT, w, h, outlineColor, fillColor, expU, expD, expL,
+               expR);
   }
-
 
   /**************************************************************************/
   /*!
@@ -84,10 +88,10 @@ public:
    @param    expR    Expand button right by this when contains() tests a point
   */
   /**************************************************************************/
-  void initButton(Adafruit_GFX* gfx=0,
-                  int16_t xL=0, int16_t yT=0, uint16_t w=0, uint16_t h=0,
-                  uint16_t outlineColor=0, uint16_t fillColor=0,
-                  uint8_t expU=0, uint8_t expD=0, uint8_t expL=0, uint8_t expR=0);
+  void initButton(Adafruit_GFX *gfx = 0, int16_t xL = 0, int16_t yT = 0,
+                  uint16_t w = 0, uint16_t h = 0, uint16_t outlineColor = 0,
+                  uint16_t fillColor = 0, uint8_t expU = 0, uint8_t expD = 0,
+                  uint8_t expL = 0, uint8_t expR = 0);
 
   /**************************************************************************/
   /*!
@@ -95,7 +99,7 @@ public:
    @returns  The current outline color
   */
   /**************************************************************************/
-  uint16_t getOutlineColor(void) { return(_outlinecolor); }
+  uint16_t getOutlineColor(void) { return (_outlinecolor); }
 
   /**************************************************************************/
   /*!
@@ -112,7 +116,7 @@ public:
    @returns  The current fill color
   */
   /**************************************************************************/
-  uint16_t getFillColor(void) { return(_fillcolor); }
+  uint16_t getFillColor(void) { return (_fillcolor); }
 
   /**************************************************************************/
   /*!
@@ -129,7 +133,7 @@ public:
    @returns  The last value of "inverted" used to draw the button
   */
   /**************************************************************************/
-  uint16_t getInverted(void) { return(_inverted); }
+  uint16_t getInverted(void) { return (_inverted); }
 
   /**************************************************************************/
   /*!
@@ -200,9 +204,10 @@ public:
   */
   /**************************************************************************/
   bool justPressed() {
-    if (!_isPressed || _returnedLastAction) return(false);
+    if (!_isPressed || _returnedLastAction)
+      return (false);
     _returnedLastAction = true;
-    return(true);
+    return (true);
   }
 
   /**************************************************************************/
@@ -212,9 +217,10 @@ public:
   */
   /**************************************************************************/
   bool justReleased() {
-    if (_isPressed || _returnedLastAction) return(false);
+    if (_isPressed || _returnedLastAction)
+      return (false);
     _returnedLastAction = true;
-    return(true);
+    return (true);
   }
 
   /**************************************************************************/
@@ -236,8 +242,7 @@ public:
               this class because the class is not an increment/decrement class
   */
   /**************************************************************************/
-  virtual int16_t delta(void) { return(_delta); }
-
+  virtual int16_t delta(void) { return (_delta); }
 };
 
 #endif // Button_TT_Base_h

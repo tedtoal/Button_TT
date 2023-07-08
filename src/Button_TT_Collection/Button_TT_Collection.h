@@ -20,8 +20,8 @@ class Button_TT_Collection {
 
 protected:
   uint8_t numRegisteredButtons;
-  Button_TT_Base* buttons[MAX_BUTTONS_IN_COLLECTION];
-  void (*processPressFuncs[MAX_BUTTONS_IN_COLLECTION])(Button_TT_Base& button);
+  Button_TT_Base *buttons[MAX_BUTTONS_IN_COLLECTION];
+  void (*processPressFuncs[MAX_BUTTONS_IN_COLLECTION])(Button_TT_Base &button);
   uint8_t pressedButton; // Set to MAX_BUTTONS_IN_COLLECTION if none.
   void (*masterPressRelease)(bool press);
 
@@ -55,7 +55,8 @@ public:
                                       button press, use NULL for none
   */
   /**************************************************************************/
-  void registerMasterProcessFunc(void (*masterPressReleaseFunc)(bool press) = NULL) {
+  void
+  registerMasterProcessFunc(void (*masterPressReleaseFunc)(bool press) = NULL) {
     masterPressRelease = masterPressReleaseFunc;
   }
 
@@ -70,8 +71,8 @@ public:
              collection is full
   */
   /**************************************************************************/
-  bool registerButton(Button_TT_Base& button,
-        void (*processPress)(Button_TT_Base& button));
+  bool registerButton(Button_TT_Base &button,
+                      void (*processPress)(Button_TT_Base &button));
 
   /**************************************************************************/
   /*!
@@ -80,7 +81,7 @@ public:
    @returns  true if successful, false if button was not previously registered
   */
   /**************************************************************************/
-  bool unregisterButton(Button_TT_Base& button);
+  bool unregisterButton(Button_TT_Base &button);
 
   /**************************************************************************/
   /*!
@@ -101,7 +102,6 @@ public:
    @returns  false if no button was previously pressed, else true
   */
   bool release();
-
 };
 
 #endif // Button_TT_Collection_h

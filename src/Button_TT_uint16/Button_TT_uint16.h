@@ -1,10 +1,10 @@
 /*
-  Button_TT_uint16.h - Library for adding a variable of type uint16_t to a button.
-  Created by Ted Toal, July 5, 2023.
-  Released into the public domain.
+  Button_TT_uint16.h - Library for adding a variable of type uint16_t to a
+  button. Created by Ted Toal, July 5, 2023. Released into the public domain.
 
-  Class Button_TT_uint16 is derived from class Button_TT, and attaches an uint16_t
-  signed integer value to the button, its value being used as the button label.
+  Class Button_TT_uint16 is derived from class Button_TT, and attaches an
+  uint16_t signed integer value to the button, its value being used as the
+  button label.
 */
 #ifndef Button_TT_uint16_h
 #define Button_TT_uint16_h
@@ -17,31 +17,34 @@ class Button_TT_uint16 : public Button_TT {
 
 protected:
   uint16_t _value, _minValue, _maxValue;
-  const char* _zeroString;
-  uint16_t (*_checkValue)(Button_TT_uint16& btn, uint16_t value);
+  const char *_zeroString;
+  uint16_t (*_checkValue)(Button_TT_uint16 &btn, uint16_t value);
 
 public:
   /**************************************************************************/
   /*!
    @brief    Constructor.
-   @param    name         String giving a name to the button, for debugging purposes only!
-   @param    (others)     Remaining (optional) arguments are the same as initButton() below
+   @param    name         String giving a name to the button, for debugging
+   purposes only!
+   @param    (others)     Remaining (optional) arguments are the same as
+   initButton() below
   */
   /**************************************************************************/
-  Button_TT_uint16(const char* name, Adafruit_GFX* gfx=0, const char* align="C",
-                  int16_t x=0, int16_t y=0, int16_t w=0, int16_t h=0,
-                  uint16_t outlineColor=0, uint16_t fillColor=0,
-                  uint16_t textColor=0, const char* textAlign="C",
-                  uint8_t textSize_x=1, uint8_t textSize_y=1,
-                  const GFXfont* f=NULL, int16_t rCorner=0,
-                  uint16_t value=0, uint16_t minValue=0, uint16_t maxValue=0,
-                  const char* zeroString=NULL, bool degreeSym=false,
-                  uint16_t (*checkValue)(Button_TT_uint16& btn, uint16_t value) = NULL,
-                  uint8_t expU=0, uint8_t expD=0, uint8_t expL=0, uint8_t expR=0) :
-            Button_TT(name) {
-    initButton(gfx, align, x, y, w, h, outlineColor, fillColor, textColor, textAlign,
-      textSize_x, textSize_y, f, rCorner, value, minValue, maxValue, zeroString,
-      degreeSym, checkValue, expU, expD, expL, expR);
+  Button_TT_uint16(
+      const char *name, Adafruit_GFX *gfx = 0, const char *align = "C",
+      int16_t x = 0, int16_t y = 0, int16_t w = 0, int16_t h = 0,
+      uint16_t outlineColor = 0, uint16_t fillColor = 0, uint16_t textColor = 0,
+      const char *textAlign = "C", uint8_t textSize_x = 1,
+      uint8_t textSize_y = 1, const GFXfont *f = NULL, int16_t rCorner = 0,
+      uint16_t value = 0, uint16_t minValue = 0, uint16_t maxValue = 0,
+      const char *zeroString = NULL, bool degreeSym = false,
+      uint16_t (*checkValue)(Button_TT_uint16 &btn, uint16_t value) = NULL,
+      uint8_t expU = 0, uint8_t expD = 0, uint8_t expL = 0, uint8_t expR = 0)
+      : Button_TT(name) {
+    initButton(gfx, align, x, y, w, h, outlineColor, fillColor, textColor,
+               textAlign, textSize_x, textSize_y, f, rCorner, value, minValue,
+               maxValue, zeroString, degreeSym, checkValue, expU, expD, expL,
+               expR);
   }
 
   /**************************************************************************/
@@ -67,7 +70,8 @@ public:
    @param   maxValue      The maximum allowed value for value
    @param   zeroString    If not NULL, this points to a character string to be
                           used as the button label if value is 0.
-   @param   degreeSym     If true, a degree symbol is drawn at the end of the label
+   @param   degreeSym     If true, a degree symbol is drawn at the end of the
+   label
    @param   checkValue    If not NULL, a pointer to a function that checks a new
                           button value and can return an adjusted value if it is
                           out of range
@@ -77,16 +81,16 @@ public:
    @param   expR    See Button_TT_Base::initButton()
   */
   /**************************************************************************/
-  void initButton(Adafruit_GFX* gfx=0, const char* align="C",
-                  int16_t x=0, int16_t y=0, int16_t w=0, int16_t h=0,
-                  uint16_t outlineColor=0, uint16_t fillColor=0,
-                  uint16_t textColor=0, const char* textAlign="C",
-                  uint8_t textSize_x=1, uint8_t textSize_y=1,
-                  const GFXfont* f=NULL, int16_t rCorner=0,
-                  uint16_t value=0, uint16_t minValue=0, uint16_t maxValue=0,
-                  const char* zeroString=NULL, bool degreeSym=false,
-                  uint16_t (*checkValue)(Button_TT_uint16& btn, uint16_t value) = NULL,
-                  uint8_t expU=0, uint8_t expD=0, uint8_t expL=0, uint8_t expR=0);
+  void initButton(
+      Adafruit_GFX *gfx = 0, const char *align = "C", int16_t x = 0,
+      int16_t y = 0, int16_t w = 0, int16_t h = 0, uint16_t outlineColor = 0,
+      uint16_t fillColor = 0, uint16_t textColor = 0,
+      const char *textAlign = "C", uint8_t textSize_x = 1,
+      uint8_t textSize_y = 1, const GFXfont *f = NULL, int16_t rCorner = 0,
+      uint16_t value = 0, uint16_t minValue = 0, uint16_t maxValue = 0,
+      const char *zeroString = NULL, bool degreeSym = false,
+      uint16_t (*checkValue)(Button_TT_uint16 &btn, uint16_t value) = NULL,
+      uint8_t expU = 0, uint8_t expD = 0, uint8_t expL = 0, uint8_t expR = 0);
 
   /**************************************************************************/
   /*!
@@ -94,7 +98,7 @@ public:
    @returns The current uint16_t value of the button
   */
   /**************************************************************************/
-  uint16_t getValue(void) { return(_value); }
+  uint16_t getValue(void) { return (_value); }
 
   /**************************************************************************/
   /*!
@@ -141,8 +145,7 @@ public:
    @returns true if button was drawn
   */
   /**************************************************************************/
-  bool valueIncDec(int16_t N = 1, Button_TT_Base* btn = NULL);
-
-  };
+  bool valueIncDec(int16_t N = 1, Button_TT_Base *btn = NULL);
+};
 
 #endif // Button_TT_uint16_h

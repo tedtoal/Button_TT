@@ -20,35 +20,35 @@ void Button_TT_Collection::clear() {
 
 /**************************************************************************/
 
-bool Button_TT_Collection::registerButton(Button_TT_Base& button,
-    void (*processPress)(Button_TT_Base& button)) {
+bool Button_TT_Collection::registerButton(
+    Button_TT_Base &button, void (*processPress)(Button_TT_Base &button)) {
   for (int i = 0; i < numRegisteredButtons; i++)
     if (buttons[i] == &button)
-      return(true);
+      return (true);
   if (numRegisteredButtons == MAX_BUTTONS_IN_COLLECTION)
-    return(false);
+    return (false);
   buttons[numRegisteredButtons] = &button;
   processPressFuncs[numRegisteredButtons] = processPress;
   numRegisteredButtons++;
-  return(true);
+  return (true);
 }
 
 /**************************************************************************/
 
-bool Button_TT_Collection::unregisterButton(Button_TT_Base& button) {
+bool Button_TT_Collection::unregisterButton(Button_TT_Base &button) {
   for (int i = 0; i < numRegisteredButtons; i++) {
     if (buttons[i] == &button) {
       numRegisteredButtons--;
       while (i < numRegisteredButtons) {
-        buttons[i] = buttons[i+1];
-        processPressFuncs[i] = processPressFuncs[i+1];
+        buttons[i] = buttons[i + 1];
+        processPressFuncs[i] = processPressFuncs[i + 1];
       }
       buttons[i] = NULL;
       processPressFuncs[i] = NULL;
-      return(true);
+      return (true);
     }
   }
-  return(false);
+  return (false);
 }
 
 /**************************************************************************/
@@ -61,13 +61,13 @@ bool Button_TT_Collection::press(int16_t x, int16_t y) {
           masterPressRelease(true);
         pressedButton = i;
         buttons[pressedButton]->press();
-        (*processPressFuncs[pressedButton]) (*buttons[pressedButton]);
-        return(true);
+        (*processPressFuncs[pressedButton])(*buttons[pressedButton]);
+        return (true);
       }
-      return(false);
+      return (false);
     }
   }
-  return(false);
+  return (false);
 }
 
 /**************************************************************************/
@@ -76,10 +76,10 @@ bool Button_TT_Collection::release() {
   if (masterPressRelease != NULL)
     masterPressRelease(false);
   if (pressedButton == MAX_BUTTONS_IN_COLLECTION)
-    return(false);
+    return (false);
   buttons[pressedButton]->release();
   pressedButton = MAX_BUTTONS_IN_COLLECTION;
-  return(true);
+  return (true);
 }
 
 // -------------------------------------------------------------------------

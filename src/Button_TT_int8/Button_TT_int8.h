@@ -18,30 +18,35 @@ class Button_TT_int8 : public Button_TT {
 protected:
   int8_t _value, _minValue, _maxValue;
   bool _showPlus;
-  int8_t (*_checkValue)(Button_TT_int8& btn, int8_t value);
+  int8_t (*_checkValue)(Button_TT_int8 &btn, int8_t value);
 
 public:
   /**************************************************************************/
   /*!
    @brief    Constructor.
-   @param    name         String giving a name to the button, for debugging purposes only!
-   @param    (others)     Remaining (optional) arguments are the same as initButton() below
+   @param    name         String giving a name to the button, for debugging
+   purposes only!
+   @param    (others)     Remaining (optional) arguments are the same as
+   initButton() below
   */
   /**************************************************************************/
-  Button_TT_int8(const char* name, Adafruit_GFX* gfx=0, const char* align="C",
-                  int16_t x=0, int16_t y=0, int16_t w=0, int16_t h=0,
-                  uint16_t outlineColor=0, uint16_t fillColor=0,
-                  uint16_t textColor=0, const char* textAlign="C",
-                  uint8_t textSize_x=1, uint8_t textSize_y=1,
-                  const GFXfont* f=NULL, int16_t rCorner=0,
-                  int8_t value=0, int8_t minValue=0, int8_t maxValue=0,
-                  bool degreeSym=false, bool showPlus=false,
-                  int8_t (*checkValue)(Button_TT_int8& btn, int8_t value) = NULL,
-                  uint8_t expU=0, uint8_t expD=0, uint8_t expL=0, uint8_t expR=0) :
-            Button_TT(name) {
-    initButton(gfx, align, x, y, w, h, outlineColor, fillColor, textColor, textAlign,
-      textSize_x, textSize_y, f, rCorner, value, minValue, maxValue, degreeSym,
-      showPlus, checkValue, expU, expD, expL, expR);
+  Button_TT_int8(const char *name, Adafruit_GFX *gfx = 0,
+                 const char *align = "C", int16_t x = 0, int16_t y = 0,
+                 int16_t w = 0, int16_t h = 0, uint16_t outlineColor = 0,
+                 uint16_t fillColor = 0, uint16_t textColor = 0,
+                 const char *textAlign = "C", uint8_t textSize_x = 1,
+                 uint8_t textSize_y = 1, const GFXfont *f = NULL,
+                 int16_t rCorner = 0, int8_t value = 0, int8_t minValue = 0,
+                 int8_t maxValue = 0, bool degreeSym = false,
+                 bool showPlus = false,
+                 int8_t (*checkValue)(Button_TT_int8 &btn, int8_t value) = NULL,
+                 uint8_t expU = 0, uint8_t expD = 0, uint8_t expL = 0,
+                 uint8_t expR = 0)
+      : Button_TT(name) {
+    initButton(gfx, align, x, y, w, h, outlineColor, fillColor, textColor,
+               textAlign, textSize_x, textSize_y, f, rCorner, value, minValue,
+               maxValue, degreeSym, showPlus, checkValue, expU, expD, expL,
+               expR);
   }
 
   /**************************************************************************/
@@ -65,8 +70,10 @@ public:
                           label string for the button
    @param   minValue      The minimum allowed value for value
    @param   maxValue      The maximum allowed value for value
-   @param   degreeSym     If true, a degree symbol is drawn at the end of the label
-   @param   showPlus      If true, a leading + is used for positive values in the label
+   @param   degreeSym     If true, a degree symbol is drawn at the end of the
+   label
+   @param   showPlus      If true, a leading + is used for positive values in
+   the label
    @param   checkValue    If not NULL, a pointer to a function that checks a new
                           button value and can return an adjusted value if it is
                           out of range
@@ -76,16 +83,16 @@ public:
    @param   expR    See Button_TT_Base::initButton()
   */
   /**************************************************************************/
-  void initButton(Adafruit_GFX* gfx=0, const char* align="C",
-                  int16_t x=0, int16_t y=0, int16_t w=0, int16_t h=0,
-                  uint16_t outlineColor=0, uint16_t fillColor=0,
-                  uint16_t textColor=0, const char* textAlign="C",
-                  uint8_t textSize_x=1, uint8_t textSize_y=1,
-                  const GFXfont* f=NULL, int16_t rCorner=0,
-                  int8_t value=0, int8_t minValue=0, int8_t maxValue=0,
-                  bool degreeSym=false, bool showPlus=false,
-                  int8_t (*checkValue)(Button_TT_int8& btn, int8_t value) = NULL,
-                  uint8_t expU=0, uint8_t expD=0, uint8_t expL=0, uint8_t expR=0);
+  void initButton(
+      Adafruit_GFX *gfx = 0, const char *align = "C", int16_t x = 0,
+      int16_t y = 0, int16_t w = 0, int16_t h = 0, uint16_t outlineColor = 0,
+      uint16_t fillColor = 0, uint16_t textColor = 0,
+      const char *textAlign = "C", uint8_t textSize_x = 1,
+      uint8_t textSize_y = 1, const GFXfont *f = NULL, int16_t rCorner = 0,
+      int8_t value = 0, int8_t minValue = 0, int8_t maxValue = 0,
+      bool degreeSym = false, bool showPlus = false,
+      int8_t (*checkValue)(Button_TT_int8 &btn, int8_t value) = NULL,
+      uint8_t expU = 0, uint8_t expD = 0, uint8_t expL = 0, uint8_t expR = 0);
 
   /**************************************************************************/
   /*!
@@ -93,7 +100,7 @@ public:
    @returns The current int8_t value of the button
   */
   /**************************************************************************/
-  int8_t getValue(void) { return(_value); }
+  int8_t getValue(void) { return (_value); }
 
   /**************************************************************************/
   /*!
@@ -140,8 +147,7 @@ public:
    @returns true if button was drawn
   */
   /**************************************************************************/
-  bool valueIncDec(int8_t N = 1, Button_TT_Base* btn = NULL);
-
-  };
+  bool valueIncDec(int8_t N = 1, Button_TT_Base *btn = NULL);
+};
 
 #endif // Button_TT_int8_h

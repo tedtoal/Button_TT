@@ -38,10 +38,10 @@
 
 /**************************************************************************/
 
-void Button_TT_Base::initButton(Adafruit_GFX *gfx,
-                int16_t xL, int16_t yT, uint16_t w, uint16_t h,
-                uint16_t outlineColor, uint16_t fillColor,
-                uint8_t expU, uint8_t expD, uint8_t expL, uint8_t expR) {
+void Button_TT_Base::initButton(Adafruit_GFX *gfx, int16_t xL, int16_t yT,
+                                uint16_t w, uint16_t h, uint16_t outlineColor,
+                                uint16_t fillColor, uint8_t expU, uint8_t expD,
+                                uint8_t expL, uint8_t expR) {
   _gfx = gfx;
   _xL = xL;
   _yT = yT;
@@ -66,9 +66,9 @@ bool Button_TT_Base::setOutlineColor(uint16_t outlineColor) {
   if (_outlinecolor != outlineColor) {
     _outlinecolor = outlineColor;
     _changedSinceLastDrawn = true;
-    return(true);
+    return (true);
   }
-  return(false);
+  return (false);
 }
 
 /**************************************************************************/
@@ -77,9 +77,9 @@ bool Button_TT_Base::setFillColor(uint16_t fillColor) {
   if (_fillcolor != fillColor) {
     _fillcolor = fillColor;
     _changedSinceLastDrawn = true;
-    return(true);
+    return (true);
   }
-  return(false);
+  return (false);
 }
 
 /**************************************************************************/
@@ -109,16 +109,16 @@ void Button_TT_Base::drawButton(bool inverted) {
 bool Button_TT_Base::drawIfChanged(bool forceDraw) {
   if (_changedSinceLastDrawn || forceDraw) {
     drawButton(_inverted);
-    return(true);
+    return (true);
   }
-  return(false);
+  return (false);
 }
 
 /**************************************************************************/
 
 bool Button_TT_Base::contains(int16_t x, int16_t y) {
-  return ((x >= _xL-_expL) && (x < (int16_t)(_xL+_w+_expR)) &&
-          (y >= _yT-_expU) && (y < (int16_t)(_yT+_h+_expD)));
+  return ((x >= _xL - _expL) && (x < (int16_t)(_xL + _w + _expR)) &&
+          (y >= _yT - _expU) && (y < (int16_t)(_yT + _h + _expD)));
 }
 
 // -------------------------------------------------------------------------
