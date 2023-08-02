@@ -1,10 +1,8 @@
 /*
-  Button_TT.cpp - Library for displaying a labelled button on a pixel device.
-  Created by Adafruit Industries, 2013.
-  Updated and enhanced by Ted Toal, July 5, 2023.
-
-  This was created by edits to the Adafruit_GFX_Button class in the library
-  Adafruit_GFX_Library. See header comments in the .h file for details.
+  Button_TT_label.cpp - Defines functions of class Button_TT_label.
+  This code originated in file Adafruit_GFX.cpp as class Adafruit_GFX_Button.
+  It was copied from there and modified, and hence this file retains the
+  original Adafruit copyright. See header comments in the .h file for details.
 
   Copyright (c) 2013 Adafruit Industries.  All rights reserved.
 
@@ -29,13 +27,16 @@
   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
   POSSIBILITY OF SUCH DAMAGE.
 */
-
 #include <Arduino.h>
-#include <Button_TT.h>
+#include <Button_TT_label.h>
+#include <pgmspace_GFX.h>
+
+// If debug enabled, include monitor_printf.h for printf to serial monitor.
 #if BUTTON_TT_DBG
 #include <monitor_printf.h>
 #endif
 
+// Define "min" and "max" functions.
 #ifndef min
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #endif
@@ -43,78 +44,20 @@
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 
-// Following stuff is borrowed from Adafruit_GFX.cpp
-#include "glcdfont.c"
-#ifdef __AVR__
-#include <avr/pgmspace.h>
-#elif defined(ESP8266) || defined(ESP32)
-#include <pgmspace.h>
-#endif
-
-// Many (but maybe not all) non-AVR board installs define macros
-// for compatibility with existing PROGMEM-reading AVR code.
-// Do our own checks and defines here for good measure...
-
-#ifndef pgm_read_byte
-#define pgm_read_byte(addr) (*(const unsigned char *)(addr))
-#endif
-#ifndef pgm_read_word
-#define pgm_read_word(addr) (*(const unsigned short *)(addr))
-#endif
-#ifndef pgm_read_dword
-#define pgm_read_dword(addr) (*(const unsigned long *)(addr))
-#endif
-
-// Pointers are a peculiar case...typically 16-bit on AVR boards,
-// 32 bits elsewhere.  Try to accommodate both...
-
-#if !defined(__INT_MAX__) || (__INT_MAX__ > 0xFFFF)
-#define pgm_read_pointer(addr) ((void *)pgm_read_dword(addr))
-#else
-#define pgm_read_pointer(addr) ((void *)pgm_read_word(addr))
-#endif
-
-inline GFXglyph *pgm_read_glyph_ptr(const GFXfont *gfxFont, uint8_t c) {
-#ifdef __AVR__
-  return &(((GFXglyph *)pgm_read_pointer(&gfxFont->glyph))[c]);
-#else
-  // expression in __AVR__ section may generate "dereferencing type-punned
-  // pointer will break strict-aliasing rules" warning In fact, on other
-  // platforms (such as STM32) there is no need to do this pointer magic as
-  // program memory may be read in a usual way So expression may be simplified
-  return gfxFont->glyph + c;
-#endif //__AVR__
-}
+/**************************************************************************/
+Font_TT Button_TT_label::builtInFont(nullptr, 1, 1);
 
 /**************************************************************************/
-void Button_TT::getLabelBounds(const char *str, int16_t &dX, int16_t &dY,
-                               uint16_t &w, uint16_t &h, int16_t &dXcF) {
-
-  _gfx->getTextBounds(str, 0, 0, &dX, &dY, &w, &h, &dXcF);
-
-  // Add one pixel on each side of the text bounding box to account for
-  // apparent inaccuracy creeping in somewhere.
-  dX -= 1;
-  dY -= 1;
-  w += 2;
-  h += 2;
-  dXcF += 1;
-#if BUTTON_TT_DBG
-  monitor_printf(
-      "name:%s  getLabelBounds(\"%s\"): dX:%d dY:%d w:%d h:%d dXcF:%d\n", _name,
-      str, dX, dY, w, h, dXcF);
-#endif
-}
+uint16_t Button_TT_label::digitWidths[10];
+bool Button_TT_label::haveDigitWidths = false;
+uint8_t Button_TT_label::widestDigit;
 
 /**************************************************************************/
-uint16_t Button_TT::digitWidths[10];
-bool Button_TT::haveDigitWidths = false;
-uint8_t Button_TT::widestDigit;
-
-int32_t Button_TT::getWidestValue(int32_t minValue, int32_t maxValue,
-                                  char S[12], uint16_t &w, uint16_t &h,
-                                  bool showPlus) {
+void Button_TT_label::getWidestValue(int32_t minValue, int32_t maxValue,
+    char S[12], uint16_t &wt, uint16_t &ht, bool showPlus,
+    const char* zeroString) {
   int16_t dX, dY, dXcF;
+  uint16_t wt2, ht2;
 
   // Get width of each digit if we don't already have it.
   if (!haveDigitWidths) {
@@ -122,8 +65,8 @@ int32_t Button_TT::getWidestValue(int32_t minValue, int32_t maxValue,
     t[1] = 0;
     for (uint8_t i = 0; i < 10; i++) {
       t[0] = (char)((uint8_t)'0' + i);
-      getLabelBounds(t, dX, dY, w, h, dXcF);
-      digitWidths[i] = w;
+      f->getTextBoundsAndOffset(t, dX, dY, wt2, ht2, dXcF);
+      digitWidths[i] = wt2;
     }
 
     // Get the widest digit.
@@ -140,17 +83,15 @@ int32_t Button_TT::getWidestValue(int32_t minValue, int32_t maxValue,
   // with both in the code below, we'll call recursively twice, computing first
   // the negative half and then the positive half.
   if (minValue < 0 && maxValue >= 0) {
-    int32_t V = getWidestValue(minValue, -1, S, w, h, showPlus);
-    uint16_t W, H;
+    getWidestValue(minValue, -1, S, wt, ht, showPlus);
     char S2[12];
-    int32_t Vpos = getWidestValue(0, maxValue, S2, W, H, showPlus);
-    if (W > w) {
-      V = Vpos;
-      w = W;
-      h = H;
+    getWidestValue(0, maxValue, S2, wt2, ht2, showPlus);
+    if (wt2 > wt) {
+      wt = wt2;
+      ht = ht2;
       strcpy(S, S2);
     }
-    return (V);
+    return;
   }
 
   // We are doing just one side here, either negative or positive. They are
@@ -203,26 +144,36 @@ int32_t Button_TT::getWidestValue(int32_t minValue, int32_t maxValue,
     testVal = -testVal;
 
   // Convert the value to character and add the sign.
-  char *p = S;
+  char* p = S;
   if (signChar == '+')
     *p++ = signChar;
   sprintf(p, "%ld", testVal);
 
   // Compute the width and height.
-  getLabelBounds(S, dX, dY, w, h, dXcF);
+  f->getTextBoundsAndOffset(S, dX, dY, wt, ht, dXcF);
+
+  // If zeroString argument was supplied, compute its width and height, compare
+  // it to those computed above, and if wider, use it.
+  if (zeroString != nullptr) {
+    int16_t dX2, dY2, dXcF2;
+    f->getTextBoundsAndOffset(zeroString, dX2, dY2, wt2, ht2, dXcF2);
+    if (wt2 > wt) {
+      wt = wt2;
+      ht = ht2;
+      strncpy(S, zeroString, sizeof(S));
+      S[sizeof(S)-1] = 0;
+    }
+  }
 
 #if BUTTON_TT_DBG
-  monitor_printf("getWidestValue()  testVal: %ld  S: %s  w: %d  h: %d\n",
-                 testVal, S, w, h);
+  monitor.printf("getWidestValue()  testVal: %ld  S: %s  w: %d  h: %d\n",
+                 testVal, S, wt, ht);
 #endif
-
-  return (testVal);
 }
 
 /**************************************************************************/
-
-void Button_TT::getDegreeSymSize(int8_t &dx, int8_t &dy, int8_t &xa, uint8_t &d,
-                                 uint8_t &rO, uint8_t &rI) {
+void Button_TT_label::getDegreeSymSize(int8_t &dx, int8_t &dy, int8_t &xa,
+    uint8_t &d, uint8_t &rO, uint8_t &rI) {
 
   // The degree symbol has turned into a royal pain in the butt.
   // Obviously, ideally we would just have a symbol in the font that was in fact
@@ -254,7 +205,7 @@ void Button_TT::getDegreeSymSize(int8_t &dx, int8_t &dy, int8_t &xa, uint8_t &d,
   // Get xOffset, yOffset, xAdvance, and height of character '"' using the
   // current font table.
   uint8_t first = pgm_read_byte(&_f->first);
-  GFXglyph *glyph;
+  GFXglyph* glyph;
   glyph = pgm_read_glyph_ptr(_f, '"' - first);
   dx = pgm_read_byte(&glyph->xOffset);
   dy = pgm_read_byte(&glyph->yOffset);
@@ -280,59 +231,37 @@ void Button_TT::getDegreeSymSize(int8_t &dx, int8_t &dy, int8_t &xa, uint8_t &d,
 }
 
 /**************************************************************************/
-
-void Button_TT::updateLabelSizeForDegreeSymbol(int16_t dX, int16_t &dY,
-                                               int16_t &dXcF, uint16_t &w,
-                                               uint16_t &h) {
+void Button_TT_label::updateLabelSizeForDegreeSymbol(int16_t dX, int16_t &dY,
+    int16_t &dXcF, uint16_t &wt, uint16_t &ht) {
 
   // Initially, the arguments reflect the size and relative cursor position of
   // the label without the degree symbol. We update them to include the degree
   // symbol.
 
-  // Update dY, the offset from cursor y (baseline y coord) to top of label
-  // bound box.
-  dY = min(dY, _dy_degree);
-
-  // Update w, the total width of the label. See comments in getLabelBounds().
-  // This uses dXcF before updating below.
-  w = dXcF - dX + _dx_degree + _d_degree;
-
-  // Update h, the total height of the label. The height is the maximum label
-  // y-coord minus the minimum y-coord. The min and max delta coords for the
-  // label without the degree symbol are dY and dY+h. The min and max delta
-  // coords of the degree symbol are _dy_degree and _dy_degree+_d_degree.
-  h = max(dY + h, _dy_degree + _d_degree) - min(dY, _dy_degree);
-
-  // Update dXcF, the cursor x-position after the end of the label and degree
-  // symbol.
-  dXcF += _xa_degree;
+  _f->newTextBoundsAndOffset(dX, dY, wt, ht, dXcF, _dx_degree, _dy_degree,
+    _d_degree, _d_degree, _xa_degree, dY, wt, ht, dXcF);
 }
 
 /**************************************************************************/
+void Button_TT_label::initButton(Adafruit_GFX* gfx, const char* align,
+    int16_t x, int16_t y, int16_t w, int16_t h, uint16_t outlineColor,
+    uint16_t fillColor, uint16_t textColor, const char* textAlign, char* label,
+    bool degreeSym, Font_TT* f, int16_t rCorner, uint8_t expU, uint8_t expD,
+    uint8_t expL, uint8_t expR) {
 
-void Button_TT::initButton(Adafruit_GFX *gfx, const char *align, int16_t x,
-                           int16_t y, int16_t w, int16_t h,
-                           uint16_t outlineColor, uint16_t fillColor,
-                           uint16_t textColor, const char *textAlign,
-                           char *label, bool degreeSym, uint8_t textSize_x,
-                           uint8_t textSize_y, const GFXfont *f,
-                           int16_t rCorner, uint8_t expU, uint8_t expD,
-                           uint8_t expL, uint8_t expR) {
-  _textcolor = textColor;
-  _textalign = "CC";
+  _textColor = textColor;
+  _textAlign = "CC";
   setTextAlign(textAlign);
-  _textsize_x = textSize_x;
-  _textsize_y = textSize_y;
-  _label = NULL;
+  _label = nullptr;
   setLabel(label);
   _degreeSym = degreeSym;
-  _f = f;
+  _f = (f != nullptr) ? f : &builtInFont;
   _rCorner = rCorner;
   _w_label = _h_label = 0;
   _dx_degree = _dy_degree = _xa_degree = _d_degree = _rO_degree = _rI_degree =
       0;
 
-  Button_TT_Base::initButton(
+  Button_TT::initButton(
       gfx); // Pre-initialize base class with null values except gfx.
 
   if (gfx == 0)
@@ -340,12 +269,10 @@ void Button_TT::initButton(Adafruit_GFX *gfx, const char *align, int16_t x,
 
   // Get label width/height, delta x/y from cursor to top-left, and final cursor
   // x-coord.
-  _gfx->setTextSize(_textsize_x, _textsize_y);
-  _gfx->setFont(_f);
   int16_t dX, dY, dXcF;
-  getLabelBounds(_label, dX, dY, _w_label, _h_label, dXcF);
+  _f->getTextBoundsAndOffset(_label, dX, dY, _w_label, _h_label, dXcF);
 #if BUTTON_TT_DBG
-  monitor_printf("name: %s  label: %s  degreeSym: %d  w_label: %d  h_label: %d "
+  monitor.printf("name: %s  label: %s  degreeSym: %d  w_label: %d  h_label: %d "
                  " dX: %d  dY: %d  dXcF: %d\n",
                  _name, _label, _degreeSym, _w_label, _h_label, dX, dY, dXcF);
 #endif
@@ -356,7 +283,7 @@ void Button_TT::initButton(Adafruit_GFX *gfx, const char *align, int16_t x,
     getDegreeSymSize(_dx_degree, _dy_degree, _xa_degree, _d_degree, _rO_degree,
                      _rI_degree);
 #if BUTTON_TT_DBG
-    monitor_printf(
+    monitor.printf(
         "  Degree symbol d: %d  rO: %d  rI: %d  dX: %d  dY: %d  xA: %d\n",
         _d_degree, _rO_degree, _rI_degree, _dx_degree, _dy_degree, _xa_degree);
 #endif
@@ -366,7 +293,7 @@ void Button_TT::initButton(Adafruit_GFX *gfx, const char *align, int16_t x,
     updateLabelSizeForDegreeSymbol(dX, dY, dXcF, _w_label, _h_label);
 
 #if BUTTON_TT_DBG
-    monitor_printf(
+    monitor.printf(
         "  Final w_label: %d  h_label: %d  dY_label: %d  dXcF_label: %d\n",
         _w_label, _h_label, dY, dXcF);
 #endif
@@ -382,7 +309,7 @@ void Button_TT::initButton(Adafruit_GFX *gfx, const char *align, int16_t x,
   if (h <= 0)
     h = _h_label - h + _rCorner * 2;
 #if BUTTON_TT_DBG
-  monitor_printf("  Final w: %d  h: %d\n", w, h);
+  monitor.printf("  Final w: %d  h: %d\n", w, h);
 #endif
 
   // Compute the upper-left coords of the entire button rectangle, (xL, yT),
@@ -402,19 +329,19 @@ void Button_TT::initButton(Adafruit_GFX *gfx, const char *align, int16_t x,
   else if (align[0] == 'C')
     yT += 1 - h / 2;
 #if BUTTON_TT_DBG
-  monitor_printf("  xL: %d  yT: %d\n", xL, yT);
+  monitor.printf("  xL: %d  yT: %d\n", xL, yT);
 #endif
 
   // Now we have the info we need to call the base class initButton().
-  Button_TT_Base::initButton(gfx, xL, yT, (uint16_t)w, (uint16_t)h,
-                             outlineColor, fillColor, expU, expD, expL, expR);
+  Button_TT::initButton(gfx, xL, yT, (uint16_t)w, (uint16_t)h, outlineColor,
+    fillColor, expU, expD, expL, expR);
 }
 
 /**************************************************************************/
+bool Button_TT_label::setTextColor(uint16_t textColor) {
 
-bool Button_TT::setTextColor(uint16_t textColor) {
-  if (_textcolor != textColor) {
-    _textcolor = textColor;
+  if (_textColor != textColor) {
+    _textColor = textColor;
     _changedSinceLastDrawn = true;
     return (true);
   }
@@ -422,12 +349,12 @@ bool Button_TT::setTextColor(uint16_t textColor) {
 }
 
 /**************************************************************************/
+bool Button_TT_label::setTextAlign(const char* textAlign) {
 
-bool Button_TT::setTextAlign(const char *textAlign) {
   if (textAlign[0] == 'C' && textAlign[1] == 0)
     textAlign = "CC";
-  if (strcmp(_textalign, textAlign) != 0) {
-    _textalign = textAlign;
+  if (strcmp(_textAlign, textAlign) != 0) {
+    _textAlign = textAlign;
     _changedSinceLastDrawn = true;
     return (true);
   }
@@ -435,21 +362,11 @@ bool Button_TT::setTextAlign(const char *textAlign) {
 }
 
 /**************************************************************************/
+bool Button_TT_label::setFont(const GFXfont* f) {
 
-bool Button_TT::setTextSize(uint8_t textSize_x, uint8_t textSize_y) {
-  if (_textsize_x != textSize_x || _textsize_y != textSize_y) {
-    _textsize_x = textSize_x;
-    _textsize_y = textSize_y;
-    _changedSinceLastDrawn = true;
-    return (true);
-  }
-  return (false);
-}
-
-/**************************************************************************/
-
-bool Button_TT::setFont(const GFXfont *f) {
-  if (_f != f) {
+  if (f == nullptr)
+    f = &builtInFont;
+  if (*_f != *f) {
     _f = f;
     _changedSinceLastDrawn = true;
     return (true);
@@ -458,37 +375,36 @@ bool Button_TT::setFont(const GFXfont *f) {
 }
 
 /**************************************************************************/
+bool Button_TT_label::setLabel(const char* label) {
 
-bool Button_TT::setLabel(const char *label) {
-  if (_label != NULL) {
+  if (_label != nullptr) {
     if (strcmp(label, _label) == 0)
       return (false);
     if (strlen(label) != strlen(_label)) {
       free(_label);
-      _label = NULL;
+      _label = nullptr;
     }
   }
-  if (_label == NULL)
-    _label = (char *)malloc(strlen(label) + 1);
+  if (_label == nullptr)
+    _label = (char*)malloc(strlen(label) + 1);
   strcpy(_label, label);
   _changedSinceLastDrawn = true;
   return (true);
 }
 
 /**************************************************************************/
-
-void Button_TT::drawButton(bool inverted) {
+void Button_TT_label::drawButton(bool inverted) {
   _inverted = inverted;
 
   uint16_t fill, outline, text;
   if (!_inverted) {
-    fill = _fillcolor;
-    outline = _outlinecolor;
-    text = _textcolor;
+    fill = _fillColor;
+    outline = _outlineColor;
+    text = _textColor;
   } else {
-    fill = _textcolor;
-    outline = _outlinecolor;
-    text = _fillcolor;
+    fill = _textColor;
+    outline = _outlineColor;
+    text = _fillColor;
   }
 
   if (fill != TRANSPARENT_COLOR || outline != TRANSPARENT_COLOR) {
@@ -508,14 +424,12 @@ void Button_TT::drawButton(bool inverted) {
   if (_label[0] != 0 && text != TRANSPARENT_COLOR) {
     // We must recompute the size of the label, as it may be a different label
     // now than the one used in initButton(), and we want to align the label
-    // according to _textalign.
-    _gfx->setTextSize(_textsize_x, _textsize_y);
-    _gfx->setFont(_f);
+    // according to _textAlign.
     int16_t dX, dY, dXcF;
-    uint16_t W, H;
-    getLabelBounds(_label, dX, dY, W, H, dXcF);
+    uint16_t wt, ht;
+    _f->getTextBoundsAndOffset(_label, dX, dY, wt, ht, dXcF);
     if (_degreeSym) {
-      updateLabelSizeForDegreeSymbol(dX, dY, dXcF, W, H);
+      updateLabelSizeForDegreeSymbol(dX, dY, dXcF, wt, ht);
     }
 
     // Compute the initial cursor position to use, which may be ABOVE and LEFT
@@ -527,29 +441,23 @@ void Button_TT::drawButton(bool inverted) {
     // The original code did not account for this and assumed that the lower
     // left corner of the text label bounding box was the correct position
     // for the cursor for drawing the text.
-    // The label is aligned within the button according to _textalign.
+    // The label is aligned within the button according to _textAlign.
     // (xStart, yBase) is the coords to set cursor to print the label
 
-    int16_t xStart = _xL - dX;
-    if (_textalign[1] == 'R')
-      xStart += _w - W;
-    else if (_textalign[1] == 'C')
-      xStart += _w / 2 - W / 2;
-
-    int16_t yBase = _yT - dY;
-    if (_textalign[0] == 'T')
-      yBase += _h - H;
-    else if (_textalign[0] == 'C')
-      yBase += _h / 2 - H / 2;
+    int16_t xStart, yBase;
+    _f->getTextAlignCursor(_xL, _yT, _w, _h, dX, dY, wt, ht, _textAlign[1],
+                           _textAlign[0], xStart, yBase);
 
 #if BUTTON_TT_DBG
-    monitor_printf("Name: %s  Label: %s  xStart: %d  yBase: %d\n", _name,
+    monitor.printf("Name: %s  Label: %s  xStart: %d  yBase: %d\n", _name,
                    _label, xStart, yBase);
 #endif
 
     // Now display the label.
     _gfx->setCursor(xStart, yBase);
     _gfx->setTextColor(text);
+    _gfx->setFont(_f->getFont());
+    _gfx->setTextSize(_f->getTextSizeX(), _f->getTextSizeY());
     _gfx->print(_label);
 
     // Also print degree symbol if enabled.
@@ -566,8 +474,9 @@ void Button_TT::drawButton(bool inverted) {
 }
 
 /**************************************************************************/
+bool Button_TT_label::setLabelAndDrawIfChanged(const char* label,
+    bool forceDraw) {
 
-bool Button_TT::setLabelAndDrawIfChanged(const char *label, bool forceDraw) {
   setLabel(label);
   if (_changedSinceLastDrawn || forceDraw) {
     drawButton();

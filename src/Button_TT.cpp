@@ -1,13 +1,13 @@
 /*
-  Button_TT_Base.cpp - Library for displaying a labelled button on a pixel
-  device, and provides a base class from which more sophisticated button classes
-  can be derived.
+  Button_TT.cpp - Defines functions of class Button_TT, which maintains size,
+  position, and press-state information for a button object displayed on a pixel
+  device, and is a base class from which to derive other button classes.
+  This code originated in file Adafruit_GFX.cpp from class Adafruit_GFX_Button.
+  It was copied from there and modified, and hence this file retains the
+  original Adafruit copyright.
 
-  Created by Adafruit Industries, 2013.
-  Updated and enhanced by Ted Toal, July 5, 2023.
+  Created by Ted Toal, July 5, 2023 from Adafruit_GFX.cpp
 
-  This was created by edits to the Adafruit_GFX_Button class in the library
-  Adafruit_GFX_Library.
 
   Copyright (c) 2013 Adafruit Industries.  All rights reserved.
 
@@ -34,14 +34,14 @@
 */
 
 #include <Arduino.h>
-#include <Button_TT_Base.h>
+#include <Button_TT.h>
 
 /**************************************************************************/
 
-void Button_TT_Base::initButton(Adafruit_GFX *gfx, int16_t xL, int16_t yT,
-                                uint16_t w, uint16_t h, uint16_t outlineColor,
-                                uint16_t fillColor, uint8_t expU, uint8_t expD,
-                                uint8_t expL, uint8_t expR) {
+void Button_TT::initButton(Adafruit_GFX* gfx, int16_t xL, int16_t yT,
+    uint16_t w, uint16_t h, uint16_t outlineColor, uint16_t fillColor,
+    uint8_t expU, uint8_t expD, uint8_t expL, uint8_t expR) {
+
   _gfx = gfx;
   _xL = xL;
   _yT = yT;
@@ -51,8 +51,8 @@ void Button_TT_Base::initButton(Adafruit_GFX *gfx, int16_t xL, int16_t yT,
   _expD = expD;
   _expL = expL;
   _expR = expR;
-  _outlinecolor = outlineColor;
-  _fillcolor = fillColor;
+  _outlineColor = outlineColor;
+  _fillColor = fillColor;
   _inverted = false;
   _changedSinceLastDrawn = true;
   _isPressed = false;
@@ -62,9 +62,9 @@ void Button_TT_Base::initButton(Adafruit_GFX *gfx, int16_t xL, int16_t yT,
 
 /**************************************************************************/
 
-bool Button_TT_Base::setOutlineColor(uint16_t outlineColor) {
-  if (_outlinecolor != outlineColor) {
-    _outlinecolor = outlineColor;
+bool Button_TT::setOutlineColor(uint16_t outlineColor) {
+  if (_outlineColor != outlineColor) {
+    _outlineColor = outlineColor;
     _changedSinceLastDrawn = true;
     return (true);
   }
@@ -73,9 +73,9 @@ bool Button_TT_Base::setOutlineColor(uint16_t outlineColor) {
 
 /**************************************************************************/
 
-bool Button_TT_Base::setFillColor(uint16_t fillColor) {
-  if (_fillcolor != fillColor) {
-    _fillcolor = fillColor;
+bool Button_TT::setFillColor(uint16_t fillColor) {
+  if (_fillColor != fillColor) {
+    _fillColor = fillColor;
     _changedSinceLastDrawn = true;
     return (true);
   }
@@ -84,16 +84,16 @@ bool Button_TT_Base::setFillColor(uint16_t fillColor) {
 
 /**************************************************************************/
 
-void Button_TT_Base::drawButton(bool inverted) {
+void Button_TT::drawButton(bool inverted) {
   _inverted = inverted;
 
   uint16_t fill, outline;
   if (!_inverted) {
-    fill = _fillcolor;
-    outline = _outlinecolor;
+    fill = _fillColor;
+    outline = _outlineColor;
   } else {
-    fill = _outlinecolor;
-    outline = _fillcolor;
+    fill = _outlineColor;
+    outline = _fillColor;
   }
 
   if (fill != TRANSPARENT_COLOR)
@@ -106,7 +106,7 @@ void Button_TT_Base::drawButton(bool inverted) {
 
 /**************************************************************************/
 
-bool Button_TT_Base::drawIfChanged(bool forceDraw) {
+bool Button_TT::drawIfChanged(bool forceDraw) {
   if (_changedSinceLastDrawn || forceDraw) {
     drawButton(_inverted);
     return (true);
@@ -116,7 +116,7 @@ bool Button_TT_Base::drawIfChanged(bool forceDraw) {
 
 /**************************************************************************/
 
-bool Button_TT_Base::contains(int16_t x, int16_t y) {
+bool Button_TT::contains(int16_t x, int16_t y) {
   return ((x >= _xL - _expL) && (x < (int16_t)(_xL + _w + _expR)) &&
           (y >= _yT - _expU) && (y < (int16_t)(_yT + _h + _expD)));
 }
