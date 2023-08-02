@@ -39,7 +39,7 @@
 void Button_TT_int8::initButton(
     Adafruit_GFX *gfx, const char *align, int16_t x, int16_t y, int16_t w,
     int16_t h, uint16_t outlineColor, uint16_t fillColor, uint16_t textColor,
-    const char *textAlign, Font_TT* f = nullptr, int16_t rCorner, int8_t value,
+    const char *textAlign, Font_TT* f, int16_t rCorner, int8_t value,
     int8_t minValue, int8_t maxValue, bool degreeSym, bool showPlus,
     int8_t (*checkValue)(Button_TT_int8 &btn, int8_t value), uint8_t expU,
     uint8_t expD, uint8_t expL, uint8_t expR) {
@@ -54,7 +54,7 @@ void Button_TT_int8::initButton(
   Button_TT_label::initButton(gfx);
   if (gfx == 0)
     return;
-  gfx->setFont(f); // Must also set base class font value to use getWidestValue.
+  gfx->setFont(f->getFont()); // Must also set base class font value to use getWidestValue.
 
   // For the initial value of the label, find the longest value in the range
   // minValue..maxValue and use that. The label might actually be out of that

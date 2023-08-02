@@ -55,6 +55,7 @@ void Font_TT::charBounds(unsigned char c, int16_t* x, int16_t* y, int16_t* minX,
 
   if (gfxFont) {
 
+    // Custom GFX font.
     if (c == '\n') { // Newline?
       *x = 0;        // Reset x to zero, advance y by one line
       *y += sizeY * (uint8_t)pgm_read_byte(&gfxFont->yAdvance);
@@ -68,10 +69,6 @@ void Font_TT::charBounds(unsigned char c, int16_t* x, int16_t* y, int16_t* minX,
                 xa = pgm_read_byte(&glyph->xAdvance);
         int8_t xo = pgm_read_byte(&glyph->xOffset),
                yo = pgm_read_byte(&glyph->yOffset);
-        if (wrap && ((*x + (((int16_t)xo + gw) * sizeX)) > _width)) {
-          *x = 0; // Reset x to zero, advance y by one line
-          *y += sizeY * (uint8_t)pgm_read_byte(&gfxFont->yAdvance);
-        }
         int16_t tsx = (int16_t)sizeX, tsy = (int16_t)sizeY,
                 x1 = *x + xo * tsx, y1 = *y + yo * tsy, x2 = x1 + gw * tsx - 1,
                 y2 = y1 + gh * tsy - 1;
@@ -87,17 +84,14 @@ void Font_TT::charBounds(unsigned char c, int16_t* x, int16_t* y, int16_t* minX,
       }
     }
 
-  } else { // Default font
+  } else {
 
+    // Default built-in font.
     if (c == '\n') {        // Newline?
       *x = 0;               // Reset x to zero,
       *y += sizeY * 8; // advance y one line
-      // min/max x/y unchaged -- that waits for next 'normal' character
+      // min/max x/y unchanged -- that waits for next 'normal' character
     } else if (c != '\r') { // Normal char; ignore carriage returns
-      if (wrap && ((*x + sizeX * 6) > _width)) { // Off right?
-        *x = 0;                                       // Reset x to zero,
-        *y += sizeY * 8;                         // advance y one line
-      }
       int x2 = *x + sizeX * 6 - 1, // Lower-right pixel of char
           y2 = *y + sizeY * 8 - 1;
       if (x2 > *maxX)
@@ -169,7 +163,7 @@ void Font_TT::getTextBounds(const __FlashStringHelper* str, int16_t x,
   *yT = y;
   *wt = *ht = 0;
 
-  int16_t minX = _width, minY = _height, maxX = -1, maxY = -1;
+  int16_t minX = 0x7FFF, minY = 0x7FFF, maxX = -0x7FFF, maxY = -0x7FFF;
 
   while ((c = pgm_read_byte(s++)))
     charBounds(c, &x, &y, &minX, &minY, &maxX, &maxY);

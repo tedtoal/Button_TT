@@ -63,7 +63,7 @@
 class Font_TT {
 
 protected:
-  GFXfont* gfxFont; // Pointer to font struct to attach to the class instance.
+  const GFXfont* gfxFont; // Pointer to font struct to attach to the class instance.
   uint8_t sizeX;    // Desired magnification in X-axis of font characters.
   uint8_t sizeY;    // Desired magnification in Y-axis of font characters.
 
@@ -78,11 +78,8 @@ public:
     @param  sy    Desired text width magnification in Y direction.
   */
   /**********************************************************************/
-  Font_TT(GFXfont* font, uint8_t sx, uint8_t sy) {
-    gfxFont = font;
-    sizeX = sx;
-    sizeY = sy;
-  }
+  Font_TT(const GFXfont* font, uint8_t sx, uint8_t sy)
+      : gfxFont(font), sizeX(sx), sizeY(sy) {}
 
   /**********************************************************************/
   /*!
@@ -91,7 +88,7 @@ public:
                   instance. nullptr means use the built-in fixed-space font.
   */
   /**********************************************************************/
-  Font_TT(GFXfont* font) : Font_TT(font, 1, 1) {}
+  Font_TT(const GFXfont* font) : Font_TT(font, 1, 1) {}
 
   /**********************************************************************/
   /*!
@@ -102,14 +99,25 @@ public:
 
   /**********************************************************************/
   /*!
-    @brief  == operator for Font_TT objects.
-    @param  other   Reference to the other Font_TT object to compare to this.
+    @brief    == operator for Font_TT objects.
+    @param    other   Reference to the other Font_TT object to compare to this.
     @returns  true if Font_TT objects refer to same font with same attributes.
   */
   /**********************************************************************/
   bool operator == (const Font_TT& other) const {
     return(gfxFont == other.gfxFont &&
       sizeX == other.sizeX && sizeY == other.sizeY);
+    }
+
+  /**********************************************************************/
+  /*!
+    @brief    != operator for Font_TT objects.
+    @param    other   Reference to the other Font_TT object to compare to this.
+    @returns  false if Font_TT objects refer to same font with same attributes.
+  */
+  /**********************************************************************/
+  bool operator != (const Font_TT& other) const {
+    return( !(*this == other) );
     }
 
    /**********************************************************************/
@@ -134,7 +142,7 @@ public:
               18x24, etc.
   */
   /**********************************************************************/
-  uint8_t getTextSizeX( { return(sizeX); }
+  uint8_t getTextSizeX() { return(sizeX); }
 
   /**********************************************************************/
   /*!
@@ -145,7 +153,7 @@ public:
               18x24, etc.
   */
   /**********************************************************************/
-  uint8_t getTextSizeY( { return(sizeY); }
+  uint8_t getTextSizeY() { return(sizeY); }
 
   /**********************************************************************/
   /*!

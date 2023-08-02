@@ -55,7 +55,7 @@ void Button_TT_uint16::initButton(
   Button_TT_label::initButton(gfx);
   if (gfx == 0)
     return;
-  gfx->setFont(f); // Must also set base class font value to use getWidestValue.
+  gfx->setFont(f->getFont()); // Must also set base class font value to use getWidestValue.
 
   // For the initial value of the label, find the longest value in the range
   // minValue..maxValue and use that. The label might actually be out of that

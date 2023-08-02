@@ -65,7 +65,7 @@ void Button_TT_label::getWidestValue(int32_t minValue, int32_t maxValue,
     t[1] = 0;
     for (uint8_t i = 0; i < 10; i++) {
       t[0] = (char)((uint8_t)'0' + i);
-      f->getTextBoundsAndOffset(t, dX, dY, wt2, ht2, dXcF);
+      _f->getTextBoundsAndOffset(t, dX, dY, wt2, ht2, dXcF);
       digitWidths[i] = wt2;
     }
 
@@ -150,13 +150,13 @@ void Button_TT_label::getWidestValue(int32_t minValue, int32_t maxValue,
   sprintf(p, "%ld", testVal);
 
   // Compute the width and height.
-  f->getTextBoundsAndOffset(S, dX, dY, wt, ht, dXcF);
+  _f->getTextBoundsAndOffset(S, dX, dY, wt, ht, dXcF);
 
   // If zeroString argument was supplied, compute its width and height, compare
   // it to those computed above, and if wider, use it.
   if (zeroString != nullptr) {
     int16_t dX2, dY2, dXcF2;
-    f->getTextBoundsAndOffset(zeroString, dX2, dY2, wt2, ht2, dXcF2);
+    _f->getTextBoundsAndOffset(zeroString, dX2, dY2, wt2, ht2, dXcF2);
     if (wt2 > wt) {
       wt = wt2;
       ht = ht2;
@@ -204,9 +204,10 @@ void Button_TT_label::getDegreeSymSize(int8_t &dx, int8_t &dy, int8_t &xa,
 
   // Get xOffset, yOffset, xAdvance, and height of character '"' using the
   // current font table.
-  uint8_t first = pgm_read_byte(&_f->first);
+  const GFXfont* font = _f->getFont();
+  uint8_t first = pgm_read_byte(&font->first);
   GFXglyph* glyph;
-  glyph = pgm_read_glyph_ptr(_f, '"' - first);
+  glyph = pgm_read_glyph_ptr(font, '"' - first);
   dx = pgm_read_byte(&glyph->xOffset);
   dy = pgm_read_byte(&glyph->yOffset);
   xa = pgm_read_byte(&glyph->xAdvance);
@@ -362,7 +363,7 @@ bool Button_TT_label::setTextAlign(const char* textAlign) {
 }
 
 /**************************************************************************/
-bool Button_TT_label::setFont(const GFXfont* f) {
+bool Button_TT_label::setFont(Font_TT* f) {
 
   if (f == nullptr)
     f = &builtInFont;

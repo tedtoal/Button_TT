@@ -77,7 +77,7 @@
 
 #include <Arduino.h>
 #include <Button_TT.h>
-#include <Font.h>
+#include <Font_TT.h>
 
 /**************************************************************************/
 /*!
@@ -323,7 +323,7 @@ public:
               true is returned).
   */
   /**************************************************************************/
-  bool setFont(const Font_TT* f = nullptr);
+  bool setFont(Font_TT* f = nullptr);
 
   /**************************************************************************/
   /*!
