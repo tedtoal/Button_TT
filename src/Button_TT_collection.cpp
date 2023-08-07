@@ -1,5 +1,5 @@
 /*
-  Button_TT_Collection.cpp - Defines functions of class Button_TT_Collection.
+  Button_TT_collection.cpp - Defines functions of class Button_TT_collection.
   Created by Ted Toal, July 5, 2023.
   Released into the public domain.
 
@@ -32,11 +32,11 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <Arduino.h>
-#include <Button_TT_Collection.h>
+#include <Button_TT_collection.h>
 
 /**************************************************************************/
 
-void Button_TT_Collection::clear() {
+void Button_TT_collection::clear() {
   release();
   numRegisteredButtons = 0;
   for (int i = 0; i < MAX_BUTTONS_IN_COLLECTION; i++) {
@@ -48,7 +48,7 @@ void Button_TT_Collection::clear() {
 
 /**************************************************************************/
 
-bool Button_TT_Collection::registerButton(
+bool Button_TT_collection::registerButton(
     Button_TT &button, void (*processPress)(Button_TT &button)) {
   for (int i = 0; i < numRegisteredButtons; i++)
     if (buttons[i] == &button)
@@ -63,7 +63,7 @@ bool Button_TT_Collection::registerButton(
 
 /**************************************************************************/
 
-bool Button_TT_Collection::unregisterButton(Button_TT &button) {
+bool Button_TT_collection::unregisterButton(Button_TT &button) {
   for (int i = 0; i < numRegisteredButtons; i++) {
     if (buttons[i] == &button) {
       numRegisteredButtons--;
@@ -81,7 +81,7 @@ bool Button_TT_Collection::unregisterButton(Button_TT &button) {
 
 /**************************************************************************/
 
-bool Button_TT_Collection::press(int16_t x, int16_t y) {
+bool Button_TT_collection::press(int16_t x, int16_t y) {
   for (int i = 0; i < numRegisteredButtons; i++) {
     if (buttons[i]->contains(x, y)) {
       if (!buttons[i]->isPressed()) {
@@ -100,7 +100,7 @@ bool Button_TT_Collection::press(int16_t x, int16_t y) {
 
 /**************************************************************************/
 
-bool Button_TT_Collection::release() {
+bool Button_TT_collection::release() {
   if (masterPressRelease != nullptr)
     masterPressRelease(false);
   if (pressedButton == MAX_BUTTONS_IN_COLLECTION)

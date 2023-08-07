@@ -1,5 +1,5 @@
 /*
-  Button_TT_Collection.h - Defines a C++ class for maintaining a collection of
+  Button_TT_collection.h - Defines a C++ class for maintaining a collection of
   buttons and providing button hit-testing to test for user button click.
   Created by Ted Toal, July 5, 2023.
   Released into the public domain.
@@ -35,13 +35,13 @@
 
   Details:
 
-  Class Button_TT_Collection holds an array of pointers to Button_TT objects.
+  Class Button_TT_collection holds an array of pointers to Button_TT objects.
   It can search them to find which one contains a given point, and it can call a
   function registered along with the button to process the contained point (such
   as when the user clicks or touches the button).
 */
-#ifndef Button_TT_Collection_h
-#define Button_TT_Collection_h
+#ifndef Button_TT_collection_h
+#define Button_TT_collection_h
 
 #include <Arduino.h>
 #include <Button_TT.h>
@@ -54,7 +54,7 @@
           them when requested to find out if one of them contains a given point.
 */
 /**************************************************************************/
-class Button_TT_Collection {
+class Button_TT_collection {
 
 protected:
 
@@ -81,7 +81,7 @@ public:
     @brief    Constructor.
   */
   /**************************************************************************/
-  Button_TT_Collection(void (*masterPressReleaseFunc)(bool press) = NULL) {
+  Button_TT_collection(void (*masterPressReleaseFunc)(bool press) = NULL) {
     numRegisteredButtons = MAX_BUTTONS_IN_COLLECTION;
     pressedButton = MAX_BUTTONS_IN_COLLECTION;
     masterPressRelease = NULL;
@@ -154,4 +154,4 @@ public:
   bool release();
 };
 
-#endif // Button_TT_Collection_h
+#endif // Button_TT_collection_h
