@@ -157,7 +157,15 @@ The next two statements above turn on the LCD backlight. They use the third pin 
 
 The last statements above call functions in the LCD Adafruit_ILI9341 object to initialize the display:
 
-> starting with the *begin()* function, then the *setRotation()* function, *setTextColor()*, *setTextSize()*, and s
+> *begin()* is called first to do basic initialization of the ILI9341 controller.
+
+> *setRotation()* is called next to set the basic rotation of the display, a value between 0 and 3. The value of 2 above is the orientation I use in my project, but you should determine the orientation you need for yours.
+
+> *setTextColor()* sets the color of text drawn on the screen, but this is not really necessary here, as normally the color is set just prior to drawing text, each time it is drawn. The constant *ILI9341_BLUE* is defined in Adafruit_ILI9341.h, see that file for a full list of color constants.
+
+> *setTextSize()* sets a magnification factor for text in the x- and y- directions. Usually I use a value of 1 in order to achieve the highest possible resolution of the text.
+
+> *setTextWrap()* enables and disables automatic text wrapping. Normally this is not used and set false.
 
 ## Contact
 
