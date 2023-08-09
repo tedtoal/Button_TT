@@ -4,7 +4,7 @@
 
 This library defines classes and functions to support drawing buttons on a pixel display. Support is included for various types of buttons, as well as button hit-testing. These classes assume a display that uses the ILI9341 controller and they use the Adafruit_ILI9341 and Adafruit_GFX_Library libraries, *so these two libraries must be installed on your system.*
 
-## Usage
+## Introductory code
 
 Here is simple code showing how to use this library to create a single on-screen rectangular button with no text and with no user interaction.
 
