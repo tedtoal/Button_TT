@@ -127,6 +127,37 @@ Take note of the button name, *simple*. This can be any name you want (including
 
 A useful design pattern is to name the button variable in the format *btn_<Name>* as is done above.
 
+## Initializing the LCD display
+
+The standard Arduino function named *setup()* is used for initialization in Arduino programs. Before you can use the LCD display or create any buttons, you must initialize it. This is done in *setup()* as follows:
+
+```
+// Standard Arduino setup() function.
+void setup() {
+
+  // Create LCD object.
+  lcd = new Adafruit_ILI9341(LCD_CS_PIN, LCD_DC_PIN);
+
+  // Turn on backlight.
+  pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
+  digitalWrite(LCD_BACKLIGHT_PIN, LCD_BACKLIGHT_ON);
+
+  // Initialize the LCD display.
+  lcd->begin();
+  lcd->setRotation(2);   // portrait mode
+  lcd->setTextColor(ILI9341_BLUE);
+  lcd->setTextSize(1);
+  lcd->setTextWrap(false);
+}
+```
+
+The first statement creates a new object of type Adafruit_ILI9341 and assigns its pointer to the *lcd* variable defined earlier. This is where two of the pin number constants for the LCD display are used.
+
+The next two statements above turn on the LCD backlight. They use the third pin number constant, which is the pin that connects to the LCD backlight. Your code might choose to turn the backlight off, and only turn it on when the touchscreen is touched.
+
+The last statements above call functions in the LCD Adafruit_ILI9341 object to initialize the display:
+
+> starting with the *begin()* function, then the *setRotation()* function, *setTextColor()*, *setTextSize()*, and s
 
 ## Contact
 
