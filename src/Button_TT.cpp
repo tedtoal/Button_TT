@@ -36,15 +36,19 @@
 #include <Arduino.h>
 #include <Button_TT.h>
 
+// If debug enabled, include monitor_printf.h for printf to serial monitor.
+#if BUTTON_TT_DBG
+#include <monitor_printf.h>
+#endif
+
 /**************************************************************************/
 
-void Button_TT::initButton(Adafruit_GFX* gfx, int16_t xL, int16_t yT,
-    uint16_t w, uint16_t h, uint16_t outlineColor, uint16_t fillColor,
-    uint8_t expU, uint8_t expD, uint8_t expL, uint8_t expR) {
+void Button_TT::initButton(Adafruit_GFX* gfx, const char* align, int16_t x,
+    int16_t y, uint16_t w, uint16_t h, uint16_t outlineColor,
+    uint16_t fillColor, uint8_t expU, uint8_t expD, uint8_t expL,
+    uint8_t expR) {
 
   _gfx = gfx;
-  _xL = xL;
-  _yT = yT;
   _w = w;
   _h = h;
   _expU = expU;
@@ -58,6 +62,27 @@ void Button_TT::initButton(Adafruit_GFX* gfx, int16_t xL, int16_t yT,
   _isPressed = false;
   _returnedLastAction = true;
   _delta = 0;
+
+  // Compute the upper-left coords of the entire button rectangle, (xL, yT),
+  // using _align, x, y, w and h.
+  if (align[0] == 'C' && align[1] == 0)
+    align = "CC";
+
+  _xL = x;
+  if (align[1] == 'R')
+    _xL += 1 - w;
+  else if (align[1] == 'C')
+    _xL += 1 - w / 2;
+
+  _yT = y;
+  if (align[0] == 'B')
+    _yT += 1 - h;
+  else if (align[0] == 'C')
+    _yT += 1 - h / 2;
+
+  #if BUTTON_TT_DBG
+  monitor.printf("  xL: %d  yT: %d\n", _xL, _yT);
+  #endif
 }
 
 /**************************************************************************/

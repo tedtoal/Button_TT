@@ -124,20 +124,23 @@ public:
                         initButton() below.
   */
   /**************************************************************************/
-  Button_TT(const char* name, Adafruit_GFX* gfx = 0, int16_t xL = 0,
-      int16_t yT = 0, uint16_t w = 0, uint16_t h = 0, uint16_t outlineColor = 0,
-      uint16_t fillColor = 0, uint8_t expU = 0, uint8_t expD = 0,
-      uint8_t expL = 0, uint8_t expR = 0) : _name(name) {
+  Button_TT(const char* name, Adafruit_GFX* gfx = 0, const char* align = "C",
+      int16_t x = 0, int16_t y = 0, uint16_t w = 0, uint16_t h = 0,
+      uint16_t outlineColor = 0, uint16_t fillColor = 0, uint8_t expU = 0,
+      uint8_t expD = 0, uint8_t expL = 0, uint8_t expR = 0) : _name(name) {
 
-    initButton(gfx, xL, yT, w, h, outlineColor, fillColor, expU, expD, expL, expR);
+    initButton(gfx, align, x, y, w, h, outlineColor, fillColor, expU, expD,
+      expL, expR);
   }
 
   /**************************************************************************/
   /*!
     @brief    Initialize button.
     @param    gfx       Pointer to display object so we can draw button on it.
-    @param    xL        The X coordinate of the top-left corner of the button.
-    @param    yT        The Y coordinate of the top-left corner of the button.
+    @param    align     (x,y) alignment: TL, TC, TR, CL, CC, CR, BL, BC, BR, C
+                        where T=top, B=bottom, L=left, R=right, C=center, C=CC.
+    @param    x         The X coordinate of the button, relative to 'align'.
+    @param    y         The X coordinate of the button, relative to 'align'.
     @param    w         Width of the button in pixels.
     @param    h         Height of the button in pixels.
     @param    outlineColor Color of the outline (16-bit 5-6-5 standard).
@@ -148,8 +151,8 @@ public:
     @param    expR      Expand button right by this when contains() tests a point.
   */
   /**************************************************************************/
-  void initButton(Adafruit_GFX* gfx = 0, int16_t xL = 0, int16_t yT = 0,
-      uint16_t w = 0, uint16_t h = 0, uint16_t outlineColor = 0,
+  void initButton(Adafruit_GFX* gfx = 0, const char* align = "C", int16_t x = 0,
+      int16_t y = 0, uint16_t w = 0, uint16_t h = 0, uint16_t outlineColor = 0,
       uint16_t fillColor = 0, uint8_t expU = 0, uint8_t expD = 0,
       uint8_t expL = 0, uint8_t expR = 0);
 

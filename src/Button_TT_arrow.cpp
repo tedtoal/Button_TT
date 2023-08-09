@@ -34,6 +34,11 @@
 #include <Arduino.h>
 #include <Button_TT_arrow.h>
 
+// If debug enabled, include monitor_printf.h for printf to serial monitor.
+#if BUTTON_TT_DBG
+#include <monitor_printf.h>
+#endif
+
 /**************************************************************************/
 
 void Button_TT_arrow::initButton(Adafruit_GFX* gfx, char orient,
@@ -111,8 +116,8 @@ void Button_TT_arrow::initButton(Adafruit_GFX* gfx, char orient,
   }
 
   // Invoke base class initialize function to finish initialization.
-  Button_TT::initButton(gfx, xL, yT, w, h, outlineColor, fillColor, expU, expD,
-    expL, expR);
+  Button_TT::initButton(gfx, "TL", xL, yT, w, h, outlineColor, fillColor, expU,
+    expD, expL, expR);
 
   // Initialize _delta according to button orientation.
   _delta = (orient == 'L' || orient == 'U') ? -1 : +1;
@@ -123,6 +128,12 @@ void Button_TT_arrow::initButton(Adafruit_GFX* gfx, char orient,
 void Button_TT_arrow::drawButton(bool inverted) {
 
   _inverted = inverted;
+
+  #if BUTTON_TT_DBG
+  monitor.printf(
+    "Draw arrow:  Name: %s  x0: %d  y0: %d  x1: %d  y1: %d  x2: %d  y2: %d\n",
+    _x0, _y0, _x1, _y1, _x2, _y2);
+  #endif
 
   uint16_t fill, outline;
   if (!_inverted) {

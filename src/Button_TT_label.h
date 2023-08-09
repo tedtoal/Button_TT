@@ -46,7 +46,8 @@
     - text centered properly.
     - functions added for get/set outline, fill, text color, text size, label.
     - added setLabelAndDrawIfChanged() function.
-    - constructors changed to a single one with a new first argument "align".
+    - constructors changed to a single one with a ]first argument "gfx" and
+      second argument "align".
     - font functionality factored out into class Font_TT, GFXfont* arguments to
       class functions changed to Font_TT* arguments.
     - custom font can be set for the button.
@@ -76,6 +77,8 @@
 #define Button_TT_label_h
 
 #include <Arduino.h>
+#include <stdlib.h>
+#include <stdarg.h>
 #include <Button_TT.h>
 #include <Font_TT.h>
 
@@ -110,9 +113,6 @@ protected:
 
   // Radius of rectangle corner in pixels, 0 = pure rectangle.
   int16_t _rCorner;
-
-  // Width and height of the label bounding box inside the button rectangle.
-  uint16_t _w_label, _h_label;
 
   // Degree symbol data:
   //  _dx_degree: distance from degree initial cursor to left of degree bound
@@ -340,11 +340,24 @@ public:
     @returns  true if new label is different from old label.
     @note     The new label is copied to a buffer allocated in memory for it,
               after freeing memory used by any previous label, but if the new
-              label is exactly the same length as the old one, the existing
-              memory is simply reused.
+              label is no longer than the old one, the existing memory is simply
+              reused.
   */
   /**************************************************************************/
   bool setLabel(const char* label);
+
+  /**************************************************************************/
+  /*!
+    @brief    Print string to button label using printf-style format string.
+    @param    format    Format string just like for printf(). Note that some
+                        specifiers may not be supported under some versions and
+                        settings of some hardware platforms.
+    @param    ...       The values to be printed, each corresponding to format
+                        string % specifiers or their arguments.
+    @returns  true if new label is different from old label.
+  */
+  /**************************************************************************/
+  bool printf(const char* format, ...);
 
   /**************************************************************************/
   /*!
