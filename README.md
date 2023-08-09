@@ -167,6 +167,21 @@ The last statements above call functions in the LCD Adafruit_ILI9341 object to i
 
 > *setTextWrap()* enables and disables automatic text wrapping. Normally this is not used and set false.
 
+## Initializing buttons
+
+  // Initialize btn_Simple.
+  btn_Simple.initButton(lcd, "TC", 120, 5, 40, 20, ILI9341_BLACK, ILI9341_BLUE);
+
+## Drawing the screen and buttons
+
+  // Fill screen with white.
+  lcd->fillScreen(ILI9341_WHITE);
+
+  // Draw btn_Simple button.
+  btn_Simple.drawButton();
+
+## loop() function not needed in simplest case
+
 ## Contact
 
 If you find a problem, please submit an issue report [here](https://github.com/tedtoal/Button_TT/issues/new/choose).
