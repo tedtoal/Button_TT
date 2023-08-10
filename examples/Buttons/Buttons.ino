@@ -40,6 +40,11 @@
   and set the _PIN #defines below for your system, then compile, load, run, and
   view the result, using the touchpad for interaction with buttons.
 
+  This requires that your display use an ILI9341 controller. If you have a
+  different display controller and have a compatible controller class derived
+  from Adafruit_GFX, you can simply change Adafruit_ILI9341 to that class name
+  within this file to switch to that display.
+
   If the SAMD architecture is being used (ARDUINO_ARCH_SAMD), this uses the
   SAMD_PWM library to produce a beep sound when a button is tapped.
 
@@ -47,15 +52,16 @@
   delete all references to SELECT.
 */
 
-// Include files needed for any button functionality.
+// Include files needed for any button functionality. Include <monitor_printf.h>
+// only if you wish to turn on Button_TT debugging (see BUTTON_TT_DBG in file
+// Button_TT.h).
 #include <Arduino.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_ILI9341.h>
 #include <monitor_printf.h>
+#include <Adafruit_ILI9341.h>
 #include <Button_TT.h>
 
 // Set SELECT to one of the following values to enable that functionality and
-// all lower-numbered functionality.
+// all lower-numbered functionality. Start at 0 and work your way up.
 //  0   Just a rectangular button with no text and no response to a tap.
 //  1   Respond to tap of button by changing its fill color.
 //  2   Play a tone while button is tapped, if SAMD architecture is used.
@@ -66,7 +72,7 @@
 //  7   Add LCD backlight timer.
 //  8   Add non-volatile memory storage of numeric button values if SAMD architecture.
 //  9   Add touchscreen calibration, storing it non-volatilely if SAMD architecture.
-#define SELECT  9
+#define SELECT  0
 
 // LCD display pin definitions.
 #define LCD_DC_PIN          2
@@ -97,7 +103,7 @@
 #if SELECT >= 1
 #include <Button_TT_collection.h>
 #include <XPT2046_Touchscreen_TT.h>
-#include <TS_ILI9341.h>
+#include <TS_Display.h>
 #endif
 
 // Include file for SAMD beeper tones (requires SAMD architecture).
@@ -164,13 +170,13 @@ const int WRITTEN_SIGNATURE = 0xBEEFDEED;
 
 /******************************************************************************/
 
-// LCD object.
-static Adafruit_ILI9341* lcd;
+// LCD display object.
+Adafruit_ILI9341* lcd;
 
 // PWM object for sound from beeper.
 #if SELECT >= 2
 #ifdef ARDUINO_ARCH_SAMD
-static SAMD_PWM* sound;
+SAMD_PWM* sound;
 #endif
 #endif
 
@@ -178,13 +184,13 @@ static SAMD_PWM* sound;
 #if SELECT >= 1
 
 // Button collection object to manage taps of buttons.
-static Button_TT_collection* screenButtons;
+Button_TT_collection* screenButtons;
 
 // Touchscreen object.
 XPT2046_Touchscreen* touch;
 
 // Touchscreen-display object.
-TS_ILI9341* ts_display;
+TS_Display* ts_display;
 
 #endif
 
@@ -336,8 +342,8 @@ bool writeNonvolatileSettingsIfChanged(nonvolatileSettings& settings) {
 /******************************************************************************/
 
 // To create a button, create a variable of type Button_TT or a derived class.
-// The button name can be anything and is unrelated to text on a button. It is
-// useful at times for debugging.
+// The button name can be anything and is unrelated to text on a button (It is
+// useful at times for debugging).
 
 // A plain button with no text, whose name is "simple".
 Button_TT btn_Simple("simple");
@@ -659,7 +665,7 @@ void drawMainScreen() {
 // by the screen, because typically you will have multiple different screens and
 // each will require its own unique processing.
 
-// Handle loop processing for the main screen.
+// Handle loop() processing for the main screen.
 void loopMainScreen() {
 
   // Currently the only thing that needs to be done in the main screen is to
@@ -733,7 +739,7 @@ typedef enum _eCalibState {
 } eCalibState;
 
 // Current state of calibration screen interaction with user.
-static eCalibState calibState;
+eCalibState calibState;
 
 // Display UL and LR calibration positions and corresponding touchscreen
 // calibration coordinates.
@@ -808,7 +814,7 @@ void btnTap_CalibrationSave(Button_TT& btn) {
   drawMainScreen();
 }
 
-// Handle loop processing for the calibration screen.
+// Handle loop() processing for the calibration screen.
 void loopCalibrationScreen() {
   boolean isTouched = touch->touched();
   TS_Point p;
@@ -907,21 +913,25 @@ void drawCurrentScreen() {
   case SCREEN_MAIN:
     drawMainScreen();
     break;
+  #if SELECT >= 9
   case SCREEN_CALIBRATION:
     drawCalibrationScreen();
     break;
+  #endif
   }
 }
 
-// Handle loop() processing in current screen.
+// Handle loop() processing for the current screen.
 void loopCurrentScreen() {
   switch (currentScreen) {
   case SCREEN_MAIN:
     loopMainScreen();
     break;
+  #if SELECT >= 9
   case SCREEN_CALIBRATION:
     loopCalibrationScreen();
     break;
+  #endif
   }
 }
 
@@ -944,12 +954,11 @@ void setup() {
   // Create LCD object.
   monitor.printf("lcd\n");
   lcd = new Adafruit_ILI9341(LCD_CS_PIN, LCD_DC_PIN);
+  // Turn on backlight.
   pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
   digitalWrite(LCD_BACKLIGHT_PIN, LCD_BACKLIGHT_ON);
   #if SELECT >= 7
   // Initialize backlight timer.
-  pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
-  digitalWrite(LCD_BACKLIGHT_PIN, LCD_BACKLIGHT_ON);
   MSsinceLastTouchBeforeBacklight = LCD_BACKLIGHT_AUTO_OFF_MS;
   MSatLastBacklightTimerUpdate = millis();
   #endif
@@ -969,7 +978,7 @@ void setup() {
 
   // Create and initialize touchscreen-LCD object.
   monitor.printf("ts_display\n");
-  ts_display = new(TS_ILI9341);
+  ts_display = new(TS_Display);
   ts_display->begin(touch, lcd);
 
   // Initialize button collection object.
@@ -1025,7 +1034,7 @@ void loop() {
   processTapsAndReleases();
   #endif
 
-  // Handle loop() processing in current screen.
+  // Handle loop() processing for the current screen.
   loopCurrentScreen();
 
 }

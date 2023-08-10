@@ -38,6 +38,11 @@
   To use this, set the _PIN #defines below for your system, compile, load, run,
   and view the resulting button. Tap it to change its text.
 
+  This requires that your display use an ILI9341 controller. If you have a
+  different display controller and have a compatible controller class derived
+  from Adafruit_GFX, you can simply change Adafruit_ILI9341 to that class name
+  within this file to switch to that display.
+
   If the SAMD architecture is being used (ARDUINO_ARCH_SAMD), this uses the
   SAMD_PWM library to produce a beep sound when a button is tapped.
 */
@@ -50,7 +55,7 @@
 #include <Button_TT_label.h>
 #include <Button_TT_collection.h>
 #include <XPT2046_Touchscreen_TT.h>
-#include <TS_ILI9341.h>
+#include <TS_Display.h>
 #include <monitor_printf.h>
 // SOUND/BEEPER support currently only if SAMD architecture.
 #ifdef ARDUINO_ARCH_SAMD
@@ -92,7 +97,7 @@ static SAMD_PWM* sound;
 XPT2046_Touchscreen* touch;
 
 // Touchscreen-display object.
-TS_ILI9341* ts_display;
+TS_Display* ts_display;
 
 // This timer serves for turning off the LCD backlight a bit after the user
 // finishes using the touchscreen. Each time the user does a screen touch, the
@@ -233,7 +238,7 @@ void setup() {
 
   // Create and initialize touchscreen-LCD object.
   monitor.printf("ts_display\n");
-  ts_display = new(TS_ILI9341);
+  ts_display = new(TS_Display);
   ts_display->begin(touch, lcd);
 
   // Initialize button collection object and register master tap/release function.
