@@ -43,16 +43,16 @@ void setup() {
   // Create LCD object.
   lcd = new Adafruit_ILI9341(LCD_CS_PIN, LCD_DC_PIN);
 
-  // Turn on backlight.
-  pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
-  digitalWrite(LCD_BACKLIGHT_PIN, LCD_BACKLIGHT_ON);
-
   // Initialize the LCD display.
   lcd->begin();
   lcd->setRotation(2);   // portrait mode
   lcd->setTextColor(ILI9341_BLUE);
   lcd->setTextSize(1);
   lcd->setTextWrap(false);
+
+  // Turn on backlight.
+  pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
+  digitalWrite(LCD_BACKLIGHT_PIN, LCD_BACKLIGHT_ON);
 
   // Initialize btn_Simple.
   btn_Simple.initButton(lcd, "TC", 120, 5, 40, 20, ILI9341_BLACK, ILI9341_BLUE);
@@ -279,15 +279,71 @@ With nothing more than the code presented above, you can run a program whose loo
 
 ## Introduction to Adafruit_GFX fonts
 
-A brief discussion of font support is in order. The *Adafruit_GFX_Library* library supports the writing of text to displays, and this includes support for a built-in mono-spaced font and additional proportionally-spaced fonts. The *Fonts* subfolder within the *Adafruit_GFX_Library* library folder contains header files, one for each proportional font that is supported. The file names indicate the font types and sizes and styles. For example, file *Fonts/FreeSansBoldOblique12pt7b.h* contains the font data for a sans-serif font in boldface italic (oblique) whose size is 12 points. You must #include the Fonts subdirectory .h file for each proportional font you wish to use. If you have limited EEPROM memory, you may find that you are limited to just a few fonts maximum. To see which fonts will work well in your project, load different fonts and use them to display text, as described below.
+A brief discussion of font support is in order. The *Adafruit_GFX_Library* library supports the writing of text to displays, and this includes support for a built-in mono-spaced font and additional proportionally-spaced fonts. The *Fonts* subfolder within the *Adafruit_GFX_Library* library folder contains header files, one for each proportional font that is supported. The file names indicate the font types and sizes and styles. For example, file *Fonts/FreeSansBoldOblique12pt7b.h* contains the font data for a sans-serif font in boldface italic (oblique) whose size is 12 points. You must #include the Fonts subdirectory .h file for each proportional font you wish to use. If you have limited EEPROM memory, you may find that you are limited to just a few fonts maximum. To see which fonts will work well in your project, load different fonts and use them to display text, as shown below.
 
-The *Adafruit_GFX_Library* library file *gfxfont.h* provides definitions for using the proportional fonts, including defining the C++ struct named *GFXfont* that contains all information for one proportional font. It also contains *the actual font data* specifying the form of each of the characters.
+The *Adafruit_GFX_Library* library file *gfxfont.h* provides definitions for using the proportional fonts, including defining the C++ struct named *GFXfont* that contains all information for one proportional font. It also contains *the actual font data* specifying the form of each of the characters. Adafruit_GFX.h automatically #includes gfxfont.h. A single instance of the *GFXfont* struct is defined by each one of the .h files in the *Fonts* subfolder, and the name of that instance is the same as the .h filename with the .h dropped. For example, the instance created by file *Fonts/FreeSans12pt7b.h* is named *FreeSans12pt7b*.
 
-The *Button_TT* library provides files *Font_TT.h* and *Font_TT.cpp* that expand on the Adafruit_GFX_Library font support by providing functions to better compute text string sizes and positions to allow for accurate alignment of text on the display. They define the class *Font_TT*, which holds a pointer to the *GFXfont* struct for *one proportional font*. You will need to create one instance of that class for each different font you use, whether the built-in font or a proportional font. This is shown later.
+When you are using a proportional font, the *Adafruit_GFX_Library* uses a pointer to the *GFXfont* class instance for the font, set using its *setFont()* function. For example, to use the *FreeSans12pt7b* font, you would `#include <Fonts/FreeSans12pt7b.h>` and you would call the display controller function `setFont(&FreeSans12pt7b)`, where the `&` creates a pointer to the *GFXfont* instance. If instead you are using the built-in font, you call `setFont(nullptr)` with a value of *nullptr* instead of an actual *GFXfont* pointer, to indicate use of the built-in font.
 
-When you are using a proportional font, the *Adafruit_GFX_Library* uses a pointer to the *GFXfont* class instance for the font, set using its *setFont()* function. If instead you are using the built-in font, you call *setFont()* with a value of *nullptr* instead of an actual *GFXfont* pointer, to indicate use of the built-in font.
+Here is a short program (aka *sketch*) that prints two text strings to the display, one using the built-in font and one using a proportional font:
 
-The *Font_TT* class doesn't have a *setFont()* function, but instead you pass the pointer to the *GFXfont* instance to the Font_TT constructor when you declare a variable of type Font_TT. Each Font_TT instance is for a single font. You pass *nullptr* to that constructor to indicate that the instance is for the built-in font. (The *Font_TT::getFont()** function returns that pointer, and it is used in the Button_TT library when *Adafruit_GFX_Library* text functions are called.)
+```
+#include <Arduino.h>
+#include <Adafruit_GFX.h>
+#include <Fonts/FreeSans12pt7b.h>
+#include <Adafruit_ILI9341.h>
+
+// LCD display pin definitions.
+#define LCD_DC_PIN          2
+#define LCD_CS_PIN          10
+#define LCD_BACKLIGHT_PIN   A2
+
+// LCD display backlight definitions.
+#define LCD_BACKLIGHT_OFF   HIGH
+#define LCD_BACKLIGHT_ON    LOW
+
+// LCD object.
+Adafruit_ILI9341* lcd;
+
+// Standard Arduino setup() function.
+void setup() {
+
+  // Create LCD object.
+  lcd = new Adafruit_ILI9341(LCD_CS_PIN, LCD_DC_PIN);
+
+  // Initialize the LCD display.
+  lcd->begin();
+  lcd->setRotation(2);   // portrait mode
+  lcd->setTextSize(1);
+  lcd->setTextWrap(false);
+
+  // Turn on backlight.
+  pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
+  digitalWrite(LCD_BACKLIGHT_PIN, LCD_BACKLIGHT_ON);
+
+  // Fill screen with white.
+  lcd->fillScreen(ILI9341_WHITE);
+
+  // Write text to display.
+  lcd->setTextColor(ILI9341_BLUE);
+  lcd->setFont(nullptr);
+  lcd->setCursor(10, 50);
+  lcd->print("Hello world!");
+
+  lcd->setTextColor(ILI9341_RED);
+  lcd->setFont(&FreeSans12pt7b);
+  lcd->setCursor(10, 100);
+  lcd->print("Goodbye world!");
+}
+
+// Standard Arduino loop() function.
+void loop() {
+}
+```
+
+The *Button_TT* library provides files *Font_TT.h* and *Font_TT.cpp* that expand on the Adafruit_GFX_Library font support by providing functions to better compute text string sizes and positions to allow for accurate alignment of text on the display. They define the class *Font_TT*, which holds a pointer to the *GFXfont* struct for *one proportional font* or holds a nullptr value to indicate use of the built-in font. You will need to create one instance of that class for each different font you use, whether the built-in font or a proportional font. This is illustrated later.
+
+The *Font_TT* class doesn't have a *setFont()* function, but instead you pass a *GFXfont* instance pointer to the Font_TT constructor when you declare a variable of type Font_TT. Each Font_TT instance is for a single font. You pass *nullptr* to that constructor to indicate that the instance is for the built-in font. (The *Font_TT::getFont()** function returns that pointer, and it is used in the Button_TT library when *Adafruit_GFX_Library* text functions are called.)
 
 ## Button_TT_label.h: buttons containing text
 
@@ -297,7 +353,6 @@ To create a button with text (a labelled button), start by including additional 
 
 ```
 // Include files when any button with text is used.
-#include <gfxfont.h>
 #include <Font_TT.h>
 #include <Button_TT_label.h>
 
