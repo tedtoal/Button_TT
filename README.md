@@ -493,6 +493,110 @@ The last piece of code necessary for the labelled button is to draw it using a *
   btn_Hello.drawButton();
 ```
 
+## Adding touchscreen support and detection of button taps
+
+
+
+
+
+
+// Touchscreen pin definitions.
+#define TOUCH_CS_PIN        A0
+#define TOUCH_IRQ_PIN       A7
+
+// Include files when button tap response is enabled.
+#include <Button_TT_collection.h>
+#include <XPT2046_Touchscreen_TT.h>
+#include <TS_Display.h>
+
+// Variables required to support touchscreen and button taps.
+
+// Button collection object to manage taps of buttons.
+Button_TT_collection* screenButtons;
+
+// Touchscreen object.
+XPT2046_Touchscreen* touch;
+
+// Touchscreen-display object.
+TS_Display* ts_display;
+
+
+// When a button responds to taps, it needs a "btnTap_" function. Although in
+// general each button needs such a function, in some cases it makes sense to
+// use the same function for multiple buttons, and in that case the "btn"
+// argument indicates which button was actually tapped.
+// Handle tap of "btn_Simple". Toggle button fill color and draw the button.
+void btnTap_Simple(Button_TT& btn) {
+  uint16_t color = btn_Simple.getFillColor();
+  btn_Simple.setFillColor(color == ILI9341_BLUE ? ILI9341_RED : ILI9341_BLUE);
+  btn_Simple.drawButton();
+}
+
+// Handle tap of "btn_Hello". Toggle its text and draw it.
+void btnTap_Hello(Button_TT& btn) {
+  const char* label = btn_Hello.getLabel();
+  bool isHello = (label[0] == 'H');
+  btn_Hello.setLabel(!isHello ? "Hello World!" : "Goodbye World!");
+  btn_Hello.drawButton();
+}
+
+
+// Button tap and release testing. This uses the screenButtons object press()
+// and release() functions to handle a tap or release. It finds the tapped or
+// released button and calls the button's press() or release() function.
+#if SELECT >= 2
+// Check for touch screen tap or release. If so, use ScreenButtons to process
+// the tap or release.
+void processTapsAndReleases() {
+  int16_t x, y, pres;
+
+  // Check for a button tap or release event.
+  switch (ts_display->getTouchEvent(x, y, pres)) {
+
+  // Handle a touch event.
+  case TS_TOUCH_EVENT:
+    // Process possible button tap.
+    screenButtons->press(x, y);
+    break;
+
+  // Handle a release event.
+  case TS_RELEASE_EVENT:
+    // Process possible button release.
+    screenButtons->release();
+    break;
+  }
+}
+
+  // Also, register buttons with screenButtons object to handle button taps/releases.
+
+  screenButtons->registerButton(btn_Simple, btnTap_Simple);
+
+  screenButtons->registerButton(btn_Hello, btnTap_Hello);
+
+  // Create and initialize touchscreen object, same rotation as lcd.
+  touch = new XPT2046_Touchscreen(TOUCH_CS_PIN, TOUCH_IRQ_PIN);
+  touch->begin();
+  touch->setRotation(lcd->getRotation());
+
+  // Create and initialize touchscreen-LCD object.
+  ts_display = new(TS_Display);
+  ts_display->begin(touch, lcd);
+
+  // Initialize button collection object.
+  screenButtons = new Button_TT_collection;
+  screenButtons->clear();
+
+
+  // Clear all existing button registrations for tap detection.
+  screenButtons->clear();
+
+
+  // Process button taps/releases for the current screen, which has registered
+  // its buttons with the screenButtons object, which is used to test for button
+  // taps and call the button tap handler function.
+  processTapsAndReleases();
+
+
 
 
 ## Contact
