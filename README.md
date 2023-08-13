@@ -249,9 +249,9 @@ expL          Like expU but expansion to the left.
 expR          Like expU but expansion to the right.
 ```
 
-The second argument, *align*, is a text string of one or two characters that tells how the button is to be aligned relative to the button position (x,y) specified by the x and y arguments. This is very handy for easily centering buttons or left- or right- justifying them. In the btn_Simple example above, the value "TC" is specified, meaning the button is to be justified against the top edge (i.e. the top of the button will be at the specified y coordinate) and centered left-right (so the button center is at the specified x coordinate). Note that justification of text within a labelled button is handled entirely separately by a different argument to the *Button_TT_label.initButton()* function, described later.
+The second argument, *align*, is a text string of one or two characters that tells how the button is to be aligned relative to the button position (x,y) specified by the x and y arguments. This is very handy for easily centering buttons or left- or right- justifying them. In the btn_Simple example above, the value "TC" is specified, meaning the button is to be justified against the top edge (i.e. the top of the button will be at the specified y coordinate of 5) and centered left-right (so the button center is at the specified x coordinate of 120, which is halfway across the 240-pixel-wide display). Note that justification of text within a labelled button is handled entirely separately by a different argument to the *Button_TT_label.initButton()* function, described later.
 
-The next four arguments (x, y, w, and h) are straightforward. They give the button (x,y) position as already discussed, and the button size in pixels, w being the width and h being the height.
+The next four arguments (x, y, w, and h) are straightforward. They give the button (x,y) position as (120, 5), and the button size (w,h) in pixels as (40, 20), w being the width and h being the height.
 
 The next two arguments (outlineColor and fillColor) are simply ILI9341_ color constants (from Adafruit_GFX.h) specifying the color of the button outline and interior. If both are the same color, the button appears as a simple rectangle with no outline. Also, a special constant, *TRANSPARENT_COLOR*, is defined in Button_TT.h and it can be used anywhere a color value is needed. It causes the graphic element assigned that color to not be drawn. If outlineColor were specified to be TRANSPARENT_COLOR, the outline of the button would not be drawn, so the color of the background screen fill would show. Likewise, if fillColor were that color, the button interior would not be drawn and the background screen fill would show. For labelled buttons (described later) whose label text can change, do not use TRANSPARENT_COLOR for the fillColor because the button interior must be drawn whenever the label changes, to erase the previous label.
 
@@ -369,8 +369,8 @@ Here is a modification of the above program that uses Font_TT functions to compu
 Adafruit_ILI9341* lcd;
 
 // Font_TT objects.
-Font_TT* fontBuiltIn;
-Font_TT* fontSans12;
+Font_TT fontBuiltIn(nullptr);
+Font_TT fontSans12(&FreeSans12pt7b);
 
 // Standard Arduino setup() function.
 void setup() {
@@ -390,25 +390,21 @@ void setup() {
   lcd->setTextSize(1);
   lcd->setTextWrap(false);
 
-  // Create font_TT objects.
-  fontBuiltIn = new Font_TT(nullptr);
-  fontSans12 = new Font_TT(&FreeSans12pt7b);
-
   // Fill screen with white.
   lcd->fillScreen(ILI9341_WHITE);
 
   // Write text to display, centered.
   lcd->setTextColor(ILI9341_BLUE);
-  lcd->setFont(fontBuiltIn->getFont());
+  lcd->setFont(fontBuiltIn.getFont());
   str = "Hello world!";
-  fontBuiltIn->getTextAlignCursor(str, 0, 0, lcd->width(), lcd->height(), 'C', 'T', xC, yC);
+  fontBuiltIn.getTextAlignCursor(str, 0, 0, lcd->width(), lcd->height(), 'C', 'T', xC, yC);
   lcd->setCursor(xC, yC);
   lcd->print(str);
 
   lcd->setTextColor(ILI9341_RED);
-  lcd->setFont(fontSans12->getFont());
+  lcd->setFont(fontSans12.getFont());
   str = "Goodbye world!";
-  fontSans12->getTextAlignCursor(str, 0, 50, lcd->width(), lcd->height()-50, 'R', 'B', xC, yC);
+  fontSans12.getTextAlignCursor(str, 0, 50, lcd->width(), lcd->height()-50, 'R', 'B', xC, yC);
   lcd->setCursor(xC, yC);
   lcd->print(str);
 }
@@ -429,35 +425,73 @@ To create a button with text (a labelled button), start by including additional 
 #include <Font_TT.h>
 #include <Button_TT_label.h>
 
-// Include one or more font files.
+// Include proportional font files, if any. Built-in font is always available.
 #include <Fonts/FreeSans12pt7b.h>
 ```
 
-A brief discussion of font support is in order. The *Adafruit_GFX_Library* library supports the writing of text to displays, and this includes support for a built-in mono-spaced font and additional proportionally-spaced fonts. The *Fonts* subfolder within the *Adafruit_GFX_Library* library folder contains header files you can include, one for each proportional font that is supported. The file names indicate the font types and sizes and styles. For example, file *Fonts/FreeSansBoldOblique12pt7b.h* contains the font data for a sans-serif font in boldface italic (oblique) whose size is 12 points. You must #include the Fonts subdirectory header file for each proportional font you wish to use. If you have limited EEPROM memory, you may find that you are limited to just a few fonts maximum. To see which fonts will work well in your project, load different fonts and use them to display text.
+The *Font_TT.h* file was introduced in the previous section, as were the header files in the *Adafruit_GFX_Library* *Fonts* subfolder. Above the font file for the sans-serif 12-point proportionally-spaced font is included. For each included font file, a separate Font_TT object must be created, passing a pointer to the font to the Font_TT constructor:
 
-The *Adafruit_GFX_Library* library file *gfxfont.h* provides definitions for using the proportional fonts, including defining the C++ struct named *GFXfont* that contains all information for one proportional font. The *Button_TT* library provides files *Font_TT.h* and *Font_TT.cpp* that expand on the Adafruit_GFX_Library font support by providing functions to better compute text string sizes and positions to allow for accurate alignment of text on the display. They define the class *Font_TT*, which holds a pointer to the *GFXfont* struct for one proportional font. You will need to create one instance of that class for each different font you use, whether the built-in font or a proportional font.
-
-When you are using a proportional font, the *Adafruit_GFX_Library* uses a pointer to the *GFXfont* class instance for the font, set using its *setFont()* function. If instead you are using the built-in font, you call *setFont()* with a value of *nullptr* instead of an actual *GFXfont* pointer, to indicate use of the built-in font. The *Font_TT* class doesn't have a *setFont()* function, but instead you pass the pointer to the *GFXfont* instance to the Font_TT constructor when you declare a variable of type Font_TT. Each Font_TT instance is for a single font. You pass *nullptr* to that constructor to indicate that the instance is for the built-in font. (The *Font_TT::getFont()** function returns that pointer, and it is used in the Button_TT library when *Adafruit_GFX_Library* text functions are called.)
-
-
-
-// When any button with text is used, create a Font_TT object for each font.
+```
+// Create a Font_TT object for each font.
 Font_TT font12(&FreeSans12pt7b);
+```
 
-// Useful constants for initializing buttons. These can be used as arguments to
-// the initButton() function.
+Two create a labelled button, define a variable of type *Button_TT_label*:
 
-// Another button, using variable name "btn_Hello", and this time named "hello".
-
+```
 // A labelled button whose name is "hello".
 Button_TT_label btn_Hello("hello");
+```
 
+As with the simple button shown earlier, each labelled button must be initialized by calling the *initButton()* function from setup() (or from some other function called by setup()):
+
+```
   // Initialize btn_Hello.
   btn_Hello.initButton(lcd, "TC", 120, 30, 200, 26, ILI9341_BLACK,
     ILI9341_LIGHTGREY, ILI9341_BLUE, "C", "Hello World!", false, &font12);
+```
 
+There is a different initButton() function for each different type of button, and each one has its own unique arguments. Therefore, you should load the *Button_TT_label.h* file into the Arduino IDE and locate and inspect the initButton() comments and default arguments. In most cases, new types of buttons are based on simpler buttons, and the initButton() function has most of the same arguments as the simpler button did, with additional arguments added. The arguments that are the same are *not necessarily in the same order or position*. Usually, the first 8 arguments are the same as the first 8 of Button_TT::initButton(), and the last four are the same as the last four of that function. New arguments appear after the first 8. This is true here.
+
+In the above initButton() call, it is seen that the button is being aligned against the top edge of the specified position (120,30) and horizontally centered at that point. The button size is 200 pixels wide by 26 pixels tall, it has a black outline and a light grey interior.
+
+After that come the new arguments:
+
+```
+textColor     Color of the button label (16-bit 5-6-5 standard).
+
+textAlign     Like 'align' but gives alignment for label,
+              1st char = up/down alignment, 2nd = left/right.
+
+label         String of the text inside the button, should be the
+              largest possible label if w or h is negative to ensure all
+              possible labels will fit in the size that is automatically
+              computed.
+
+degreeSym     If true, a degree symbol is drawn at the end of the label.
+
+f             Pointer to Font_TT object for the custom font to use
+              for the label, nullptr for built-in font.
+
+rCorner       Radius in pixels of rounded corners of the button
+              outline rectangle, 0 for straight corners.
+```
+
+Thus, *textColor* specifies the text color, in this case blue, *textAlign* specifies center alignment of the text within the button rectangle, and *label* gives the button label as "Hello world!". The button and text colors, text alignment, and text itself can be changed at any time by calling other button functions, such as *Button_TT_label::setLabel()*.
+
+Automatically setting button size based on the label text size will be discussed later.
+
+The Adafruit_GFX_Library fonts do not include a symbol for the *degree character*. This can be drawn manually using circle-drawing functions in that library. However, the Button_TT library was used in a thermostat and it was desired to provide better support for that symbol, without actually modifying the font files to add the symbol. Instead, the *degreeSym* argument is provided. It is either true or false (the default value). When true, a degree symbol is automatically added after the label text and is included in the text alignment algorithm. In the code above, *degreeSym* is specified as the default value of false so that the following argument, *f* (the font for the text) can be specified.
+
+The address of the *font12* font object created earlier is specified for *f*, so that font will be used to draw the button label. The font can also be changed later by calling *Button_TT_label::setFont()*.
+
+The Button_TT simple buttons are drawn as rectangles with straight corners, but Button_TT_label buttons can optionally use rounded corners. The *rCorner* argument specifies the radius of the corners, with the default value of giving straight corners.
+
+The last piece of code necessary for the labelled button is to draw it using a *drawButton()* call from setup() or a function called by it:
+
+```
   btn_Hello.drawButton();
-
+```
 
 
 
