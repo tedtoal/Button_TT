@@ -2,7 +2,7 @@
 
 ## Draws various styles of buttons on a pixel display
 
-This library defines classes and functions to support drawing buttons on a pixel display. Support is included for various types of buttons, as well as button hit-testing. These classes use the *Adafruit_GFX_Library* graphics library, and they require a display with a controller object class that is derived from class *Adafruit_GFX*. Many low-cost displays use the ILI9341 controller, which has compatible library *Adafruit_ILI9341* which defines a class of the same name. *You must install the **Adafruit_GFX_Library** library on your system, and the controller library such as **Adafruit_ILI9341***.
+This library defines classes and functions to support drawing buttons on a pixel display. Support is included for various types of buttons, as well as button hit-testing. These classes use the *Adafruit_GFX_Library* graphics library, and they require a display with a controller object class that is derived from class *Adafruit_GFX*. Many low-cost displays use the ILI9341 controller, which has compatible library *Adafruit_ILI9341* that defines a class of the same name. *You must install the **Adafruit_GFX_Library** library on your system, and the compatible display controller library such as **Adafruit_ILI9341***.
 
 ## Introductory code
 
@@ -10,6 +10,7 @@ Here is simple code showing how to use this library to create a single on-screen
 
 ```
 #include <Arduino.h>
+#include <Adafruit_ILI9341.h>
 #include <Button_TT.h>
 
 // LCD display pin definitions.
@@ -62,6 +63,33 @@ void setup() {
 void loop() {
 }
 ```
+
+Of course, to run this as a program you need to change the hardware pin numbers (_PIN constants) to the correct values for your system.
+
+A more complete example is provided in the example program *HelloWorld.ino*, which adds a button containing text plus touchscreen interaction, and it responds to touches of the button by changing its text.
+
+## Quick start
+
+If you'd prefer to skip the rest of this document and just quickly get started, the example program *Button.ino* shows fairly thorough use of the *Button_TT* library (although additional details are given in the sections below). That program is set up so that a #define of *SELECT* near the top of the file selects which features of the program are enabled. Starting with *#define SELECT 0* and working up to *#define SELECT 9*, more and more features are added to the previous features:
+> 0 :  Just a rectangular button with no text and no response to a tap.
+
+> 1 :  Respond to tap of button by changing its fill color.
+
+> 2 :  Play a tone while button is tapped, if SAMD architecture is used.
+
+> 3 :  Add a button with text in it. Tapping it changes the text.
+
+> 4 :  Add a button with an integer value in it. Tapping it increments the value.
+
+> 5 :  Add arrow buttons that increment/decrement the numeric value.
+
+> 6 :  Add a button with an unsigned integer in it, with arrow buttons.
+
+> 7 :  Add LCD backlight timer.
+
+> 8 :  Add non-volatile memory storage of numeric button values if SAMD architecture.
+
+> 9 :  Add touchscreen calibration, storing it non-volatilely if SAMD architecture.
 
 The following sections introduce the Button_TT library functionality one piece at a time.
 
