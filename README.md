@@ -623,6 +623,61 @@ void loop() {
 }
 ```
 
+## Playing a beep sound when button is tapped
+
+Usually it is desirable to provide some audible user feedback when he taps a button. Here (and in the *Button.ino* example program) we use the *SAMD_PWM* library, which requires the SAMD microprocessor architecture, to produce the sound. You can adapt this code to use your preferred sound library. The *SAMD_PWM* library defines class *SAMD_PWM*, which talks to the sound hardware to produce sounds. To use the library, you must include its header file, define the hardware pin that is attached to the sound device (BEEPER_PIN), define constants that determine the particular sound to be produced when a button is tapped, and define a pointer to a *SAMD_PWM* object:
+
+```
+// Include file for SAMD beeper tones (requires SAMD architecture).
+#ifdef ARDUINO_ARCH_SAMD
+#define _PWM_LOGLEVEL_ 0
+#include <SAMD_PWM.h>
+
+// Beeper pin definition.
+#define BEEPER_PIN          A3
+
+// Beeper tone definitions.
+#define TS_TONE_FREQ        3000  // Frequency to play when touch screen is tapped.
+#define TS_TONE_DUTY        50    // Duty cycle in % of square wave tone, 0 for off.
+
+// PWM object for sound from beeper.
+SAMD_PWM* sound;
+
+#else
+#error SAMD architecture is required to play a beep!
+#endif
+```
+
+The SAMD_PWM object must be initialized, usually within the *setup()* function. This is where the sound device pin number is used, and there may also be a need for sound constants, such as TS_TONE_FREQ here:
+
+```
+  // Initialize PWM object for sound from beeper (requires SAMD architecture).
+  sound = new SAMD_PWM(BEEPER_PIN, TS_TONE_FREQ, 0);
+```
+
+To create a sound when a button is pressed, a function must be defined that will start or stop a sound when a button is pressed or released. Here, for clarity, we define one function to start or stop a sound, and a second one, called the *master button tap/release function*, that is called when a button is pressed or released, and it calls the first function to start or stop the sound:
+
+```
+// Play (true) or stop playing (false) a sound.
+void playSound(bool play) {
+  sound->setPWM(BEEPER_PIN, TS_TONE_FREQ, play ? TS_TONE_DUTY : 0);
+}
+
+// Master button tap/release function. Tap: start tone. Release: end tone.
+void buttonTapRelease(bool tap) {
+  playSound(tap);
+}
+```
+
+Finally, the last thing to do is to register the master button tap/release function with the *screenButton* object, which will call the function as buttons are pressed and released. This is usually done within *setup():*
+
+```
+  // Register master tap/release function to turn tone on/off at screen taps.
+  screenButtons->registerMasterProcessFunc(buttonTapRelease);
+```
+
+That is all that is necessary to implement audible button press/release feedback.
+
 
 
 
