@@ -499,41 +499,68 @@ Buttons don't always need to be actual buttons to be tapped by a user. Label but
 
 The *Button_TT* library requires that your touchscreen uses an XPT2046 controller, which is common on low-cost touchscreens. The touchscreen must be controllable using the library *XPT2046_Touchscreen_TT*, which is an enhanced version of the *XPT2046_Touchscreen* library, so as long as that latter library works with your touchscreen, you can install the *XPT2046_Touchscreen_TT* library to provide button tap support. Example programs in that library allow you to test that it works correctly by itself and with your display.
 
-The *XPT2046_Touchscreen_TT* library has two pairs of files supporting the touchscreen. Files *XPT2046_Touchscreen_TT.h/.cpp* define class XPT2046_Touchscreen_TT that talks to the XPT2046 controller and has functions to test for taps and get their positions. Files *TS_Display.h/.cpp* define class TS_Display that provides several services for working with a combination of a touchscreen and a display, such as mapping touchscreen coordinates to display coordinates. To use the touchscreen with the *Button_TT* library, include both of those header files:
+The *XPT2046_Touchscreen_TT* library has two pairs of files supporting the touchscreen. Files *XPT2046_Touchscreen_TT.h/.cpp* define class XPT2046_Touchscreen_TT that talks to the XPT2046 controller and has functions to test for taps and get their positions. Files *TS_Display.h/.cpp* define class TS_Display that provides several services for working with a combination of a touchscreen and a display, such as mapping touchscreen coordinates to display coordinates. To use the touchscreen with the *Button_TT* library, include both of those header files near the top of your .ino file:
 
+```
+// Include files to use touchscreen with display.
+#include <XPT2046_Touchscreen_TT.h>
+#include <TS_Display.h>
+```
 
-The file pair *Button_TT_collection.h/.cpp* in the *Button_TT* library defines a class *Button_TT_collection* whose purpose is to maintain a set of buttons that are currently displayed on the screen and can be tapped to initiate some action. Your code must have one instance of the class, and as tappable buttons are created, they must be registered with that instance, including a function to be called if the button is tapped. If the display is changed, for example by displaying a different screen with different buttons, the registered buttons must be cleared from the instance and then the buttons for the new screen must be registered with it.
+The file pair *Button_TT_collection.h/.cpp* in the *Button_TT* library defines a class *Button_TT_collection* whose purpose is to maintain a set of buttons that are currently displayed on the screen and can be tapped to initiate some action. Your code must have one instance of the class, and as tappable buttons are created, they must be registered with that instance, including a function to be called if the button is tapped. If the display is changed, for example by displaying a different screen with different buttons, the registered buttons must be cleared from the instance and then the buttons for the new screen must be registered with it. To use the touchscreen with the *Button_TT* library, include that header file:
 
-A function must be defined that checks for touchscreen taps, and is called from the standard Arduino loop() function. When a touchscreen tap is detected, it uses the *Button_TT_collection* instance to find the button that was tapped, if any, and call its tap function to perform the desired button action.
+```
+// Include when button tap response is required.
+#include <Button_TT_collection.h>
+```
 
+The touchscreen requires two signals from the microcomputer to access it, and these must be defined, usually near the top of your .ino file:
 
-
-
+```
 // Touchscreen pin definitions.
 #define TOUCH_CS_PIN        A0
 #define TOUCH_IRQ_PIN       A7
+```
 
-// Include files when button tap response is enabled.
-#include <XPT2046_Touchscreen_TT.h>
-#include <TS_Display.h>
-#include <Button_TT_collection.h>
+The above are examples, change the values to match the pins connected to the touchscreen on your system.
 
-// Variables required to support touchscreen and button taps.
+When the *XPT2046_Touchscreen_TT* library is used, a variable must be defined that will point to an instance of the *XPT2046_Touchscreen_TT* class. It is used to interact with the touchscreen, and if the touchscreen is used with a display, a second variable must be defined that points to an instance of the *TS_Display* class:
 
-// Button collection object to manage taps of buttons.
-Button_TT_collection* screenButtons;
-
+```
 // Touchscreen object.
 XPT2046_Touchscreen* touch;
 
 // Touchscreen-display object.
 TS_Display* ts_display;
+```
 
+A third variable must be defined that will point to an instance of the *Button_TT_collection* class, used to register buttons to be monitored for taps:
 
-// When a button responds to taps, it needs a "btnTap_" function. Although in
-// general each button needs such a function, in some cases it makes sense to
-// use the same function for multiple buttons, and in that case the "btn"
-// argument indicates which button was actually tapped.
+```
+// Button collection object to manage taps of buttons.
+Button_TT_collection* screenButtons;
+```
+
+All three of the above pointer variables must be initialized, which involves allocating and assigning an object instance to them, followed by one or more calls to member functions to perform required initialization. It is during the *touch* object initialization that the touchscreen pin numbers defined earlier are used. *Typically this is all done within the standard Arduino **setup()** function, **after** initializing the display object:*
+
+```
+  // Create and initialize touchscreen object, same rotation as lcd.
+  touch = new XPT2046_Touchscreen(TOUCH_CS_PIN, TOUCH_IRQ_PIN);
+  touch->begin();
+  touch->setRotation(lcd->getRotation());
+
+  // Create and initialize touchscreen-LCD object.
+  ts_display = new(TS_Display);
+  ts_display->begin(touch, lcd);
+
+  // Initialize button collection object.
+  screenButtons = new Button_TT_collection;
+  screenButtons->clear();
+```
+
+A function must be defined for each button that must respond to a tap, and it must perform the desired action. Although in general each tappable button needs such a function, in some cases it makes sense to use the same function for multiple buttons, and this will be shown later. In our example case here, we have already defined two buttons that we want to respond to taps, the *Simple* and *Hello* buttons. We will make a tap of the Simple button toggle its fill color between two colors, and a tap of the Hello button will toggle its text label between two labels:
+
+```
 // Handle tap of "btn_Simple". Toggle button fill color and draw the button.
 void btnTap_Simple(Button_TT& btn) {
   uint16_t color = btn_Simple.getFillColor();
@@ -548,14 +575,14 @@ void btnTap_Hello(Button_TT& btn) {
   btn_Hello.setLabel(!isHello ? "Hello World!" : "Goodbye World!");
   btn_Hello.drawButton();
 }
+```
 
+The above functions make use of the basic button functions *getFillColor()*, *setFillColor()*, *getLabel()*, and *setLabel()*, and they both call the *drawButton()* function to redraw the button on the screen, since its appearance has been changed.
 
-// Button tap and release testing. This uses the screenButtons object press()
-// and release() functions to handle a tap or release. It finds the tapped or
-// released button and calls the button's press() or release() function.
-#if SELECT >= 2
-// Check for touch screen tap or release. If so, use ScreenButtons to process
-// the tap or release.
+Another function must be defined that checks for touchscreen taps. It is called from the standard Arduino loop() function. It uses the *ts_display* instance to test for a touchscreen tap, and the *screenButtons* instance to find the button that was tapped and call its tap function to perform the desired button action:
+
+```
+// Check for touch screen tap or release and use ScreenButtons to process it.
 void processTapsAndReleases() {
   int16_t x, y, pres;
 
@@ -564,36 +591,24 @@ void processTapsAndReleases() {
 
   // Handle a touch event.
   case TS_TOUCH_EVENT:
-    // Process possible button tap.
+    // Check for a button tap and if so, call its tap function.
     screenButtons->press(x, y);
     break;
 
   // Handle a release event.
   case TS_RELEASE_EVENT:
-    // Process possible button release.
+    // Check for a button release. Only one button press at a time can be detected.
     screenButtons->release();
     break;
   }
 }
+```
 
   // Also, register buttons with screenButtons object to handle button taps/releases.
 
   screenButtons->registerButton(btn_Simple, btnTap_Simple);
 
   screenButtons->registerButton(btn_Hello, btnTap_Hello);
-
-  // Create and initialize touchscreen object, same rotation as lcd.
-  touch = new XPT2046_Touchscreen(TOUCH_CS_PIN, TOUCH_IRQ_PIN);
-  touch->begin();
-  touch->setRotation(lcd->getRotation());
-
-  // Create and initialize touchscreen-LCD object.
-  ts_display = new(TS_Display);
-  ts_display->begin(touch, lcd);
-
-  // Initialize button collection object.
-  screenButtons = new Button_TT_collection;
-  screenButtons->clear();
 
 
   // Clear all existing button registrations for tap detection.
