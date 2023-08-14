@@ -742,6 +742,8 @@ With that constant available, *initButton()* is called, typically in *setup()* o
 
 The most important initialization values are *value*, *minValue*, and *maxValue*, all *int8_t* types. The integer button classes each maintain three integer values as part of the class instance, one for the current button value and two for the minimum and maximum allowed values. One advantage of using these classes is that they automatically enforce the minimum and maximum values. Here, the initial value is -5 and the allowed range is from -10 (minValue) to +10 (maxValue).
 
+Three *initButton()* arguments weren't used above, *degreeSym*, *showPlus*, and *checkValue*. The *degreeSym* argument will be shown in a later section. The *showPlus* argument simply causes a "+" to be shown for positive values when showPlus=true. The "+" is omitted if showPlus=false (the default value). Finally, the *checkValue* argument is for advanced checking of button values and is left for the programmer to explore when needed.
+
 Finally, the button must be drawn, often in a screen draw function but perhaps simply within *setup():*
 
 ```
@@ -829,6 +831,65 @@ And they are registered just after the *registerButton()* call for the associate
 ```
 
 With the above code, a pair of arrow buttons is implemented that will respectively decrement and increment the btn_int8Val value.
+
+## Using a button with a signed integer value
+
+The previous sections illustrated use of an signed integer button. Here the code is shown for using an unsigned integer button, of class *Button_TT_uint8*, with a pair of arrow buttons for increment and decrement. There are minor differences worthy of noting.
+
+Start as usual by including the header file and define the button variables and tap function:
+
+```
+// Include file for using button with uint8_t value.
+#include <Button_TT_uint8.h>
+
+// A uint8_t button whose name is "uint8Val".
+// There is no tap handler for this button, tapping it does nothing. It changes
+// its value when one of the arrow buttons to its right is tapped.
+Button_TT_uint8 btn_uint8Val("uint8Val");
+
+// Define two arrow buttons (left/right, for decrement/increment)  to go with btn_uint8Val.
+Button_TT_arrow btn_uint8Val_left("uint8Val_left");
+Button_TT_arrow btn_uint8Val_right("uint8Val_right");
+
+// The tap function is shared by both arrow buttons.
+void btnTap_uint8Val_delta(Button_TT& btn) {
+  btn_uint8Val.valueIncDec(1, &btn);
+}
+```
+
+The *initButton()* function for unsigned integer buttons has one argument difference with that for signed integer buttons: instead of the *showPlus* argument (unsigned integer buttons never shown a sign since the value is unsigned) there is an argument named *zeroString*, which is a character string value. It provides a string to display instead of "0" when the unsigned integer value is 0. Its default value is *nullptr*, which means "0" is displayed for "0". It is provided for cases where the code uses a value of 0 to mean something different such as "OFF".
+
+Call *initButton()* to initialize each button:
+
+```
+  // Initialize btn_uint8Val. Give it rounded corners, with initial value 10 and
+  // range 0 to 10, and add a degree symbol after it. Display "--" for 0.
+  btn_uint8Val.initButton(lcd, "TL", 35, 113, 50, 26, ILI9341_BLACK, ILI9341_LIGHTGREY,
+    ILI9341_RED, "C", &font12, RAD, +10, 0, +10, true, "--");
+
+  // Initialize arrow buttons for uint8val button.
+  btn_uint8Val_left.initButton(lcd, 'L', "TR", 120, 110, 30, 30, ILI9341_BLACK, ILI9341_LIGHTGREY);
+  btn_uint8Val_right.initButton(lcd, 'R', "TL", 130, 110, 30, 30, ILI9341_BLACK, ILI9341_LIGHTGREY);
+```
+
+Above we see that "--" is used for the value of the *zeroString* argument, to show that string instead of "0" for the value 0. The *degreeSym* argument is true, which causes a small superscript circle to be displayed after the number, indicating *degrees*. This feature obviates the need for devising a font that contains a degree symbol.
+
+The *drawButton()* function is called for each function to draw it:
+
+```
+  btn_uint8Val.drawButton();
+  btn_uint8Val_left.drawButton();
+  btn_uint8Val_right.drawButton();
+```
+
+Finally, the *screenButtons* *registerButton()* function is called for each arrow button to make it tappable:
+
+```
+  screenButtons->registerButton(btn_uint8Val_left, btnTap_uint8Val_delta);
+  screenButtons->registerButton(btn_uint8Val_right, btnTap_uint8Val_delta);
+```
+
+
 
 ## Creating new button styles with your own button classes
 
