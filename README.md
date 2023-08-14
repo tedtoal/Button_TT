@@ -889,7 +889,102 @@ Finally, the *screenButtons* *registerButton()* function is called for each arro
   screenButtons->registerButton(btn_uint8Val_right, btnTap_uint8Val_delta);
 ```
 
+## Turning off display backlight after no touch activity
 
+Often a desired feature of a system with a backlit display (such as an LCD display) is to turn off the backlight after sufficient time has elapsed with no activity. Although support for that feature is not specifically part of the *Button_TT* library, it can easily be implemented within the framework already presented above.
+
+The first step is to define a constant that gives the number of milliseconds after the last screen touch before turning off the backlight. This definition is placed together with the backlight on/off values:
+
+```
+// Number of milliseconds after last screen touch before backlight is turned off.
+#define LCD_BACKLIGHT_AUTO_OFF_MS (10*1000)
+```
+
+Here two variables are used for timing the backlight. One counts milliseconds since last screen touching activity, and the other is used to record the actual millisecond time (from the Arduino *millis()* function) at which the first variable was last updated. Although a single variable would work, instead two are used to simplify dealing with overflow of the millis() count. Define these variables near the top of the .ino file, they are global to the whole file:
+
+```
+// Variables for supporting backlight timer.
+
+// This timer serves for turning off the LCD backlight a bit after the user
+// finishes using the touchscreen. Each time the user does a screen touch, the
+// LCD backlight is turned on if it was off. Each time the user releases his
+// touch on the screen, this variable is zeroed. At regular updates when the
+// screen is not being touched, this is counted upwards by milliseconds to
+// LCD_BACKLIGHT_AUTO_OFF_MS, and when it reaches that, the backlight is turned
+// off and this stops counting and is not reset.
+uint32_t MSsinceLastTouchBeforeBacklight;
+
+// In order to be able to update the value of MSsinceLastTouchBeforeBacklight
+// periodically, the following variable records the milliseconds time (millis())
+// at which the last update was made to it, so that when the next update time
+// occurs, the number of elapsed milliseconds can be determined and used to do
+// the update.
+uint32_t MSatLastBacklightTimerUpdate;
+```
+
+The variables are initialized in *setup()* just after initializing the backlight on:
+
+```
+  // Turn on backlight.
+  pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
+  digitalWrite(LCD_BACKLIGHT_PIN, LCD_BACKLIGHT_ON);
+  // Initialize backlight timer.
+  MSsinceLastTouchBeforeBacklight = 0;
+  MSatLastBacklightTimerUpdate = millis();
+```
+
+Finally, the *processTapsAndReleases()* function is modified to turn the backlight on and off as needed:
+
+```
+void processTapsAndReleases() {
+  int16_t x, y, pres;
+
+  // Check for a button tap or release event.
+  switch (ts_display->getTouchEvent(x, y, pres)) {
+
+  // When screen is not being touched or uncertain about touch, update the
+  // backlight timer and if it times out, turn off the backlight.
+  case TS_NO_TOUCH:
+  case TS_UNCERTAIN:
+    if (MSsinceLastTouchBeforeBacklight < LCD_BACKLIGHT_AUTO_OFF_MS) {
+      uint32_t MS = millis();
+      uint32_t elapsedMS = MS - MSatLastBacklightTimerUpdate;
+      MSatLastBacklightTimerUpdate = MS;
+      MSsinceLastTouchBeforeBacklight += elapsedMS;
+      if (MSsinceLastTouchBeforeBacklight >= LCD_BACKLIGHT_AUTO_OFF_MS) {
+        MSsinceLastTouchBeforeBacklight = LCD_BACKLIGHT_AUTO_OFF_MS;
+        digitalWrite(LCD_BACKLIGHT_PIN, LCD_BACKLIGHT_OFF);
+      }
+    }
+    break;
+
+  // As long as a touch is present, reset backlight timer.
+  case TS_TOUCH_PRESENT:
+    MSsinceLastTouchBeforeBacklight = 0;
+    MSatLastBacklightTimerUpdate = millis();
+    break;
+
+  // Handle a touch event.
+  case TS_TOUCH_EVENT:
+    // Check for a button tap and if so, call its tap function. Touch events turn
+    // on the backlight if off, else are processed as possible screen button taps.
+    if (digitalRead(LCD_BACKLIGHT_PIN) == LCD_BACKLIGHT_OFF)
+      digitalWrite(LCD_BACKLIGHT_PIN, LCD_BACKLIGHT_ON);
+    else
+      screenButtons->press(x, y);
+    break;
+
+  // Handle a release event.
+  case TS_RELEASE_EVENT:
+    // Release events reset the backlight timer.
+    MSsinceLastTouchBeforeBacklight = 0;
+    MSatLastBacklightTimerUpdate = millis();
+    // Check for a button release. Only one button press at a time can be detected.
+    screenButtons->release();
+    break;
+  }
+}
+```
 
 ## Creating new button styles with your own button classes
 
