@@ -495,7 +495,16 @@ The last piece of code necessary for the labelled button is to draw it using a *
 
 ## Adding touchscreen support and detection of button taps
 
+Buttons don't always need to be actual buttons to be tapped by a user. Label buttons in particular are useful simply as labels on the display. It may be more convenient to use buttons for text labels rather than simply writing the text string to the display, because then each screen element is created in the same manner. However, *usually* one wants to allow the user to tap a button, then detect the tap and perform an appropriate action. The *Button_TT* library provides support to make this easier.
 
+The *Button_TT* library requires that your touchscreen uses an XPT2046 controller, which is common on low-cost touchscreens. The touchscreen must be controllable using the library *XPT2046_Touchscreen_TT*, which is an enhanced version of the *XPT2046_Touchscreen* library, so as long as that latter library works with your touchscreen, you can install the *XPT2046_Touchscreen_TT* library to provide button tap support. Example programs in that library allow you to test that it works correctly by itself and with your display.
+
+The *XPT2046_Touchscreen_TT* library has two pairs of files supporting the touchscreen. Files *XPT2046_Touchscreen_TT.h/.cpp* define class XPT2046_Touchscreen_TT that talks to the XPT2046 controller and has functions to test for taps and get their positions. Files *TS_Display.h/.cpp* define class TS_Display that provides several services for working with a combination of a touchscreen and a display, such as mapping touchscreen coordinates to display coordinates. To use the touchscreen with the *Button_TT* library, include both of those header files:
+
+
+The file pair *Button_TT_collection.h/.cpp* in the *Button_TT* library defines a class *Button_TT_collection* whose purpose is to maintain a set of buttons that are currently displayed on the screen and can be tapped to initiate some action. Your code must have one instance of the class, and as tappable buttons are created, they must be registered with that instance, including a function to be called if the button is tapped. If the display is changed, for example by displaying a different screen with different buttons, the registered buttons must be cleared from the instance and then the buttons for the new screen must be registered with it.
+
+A function must be defined that checks for touchscreen taps, and is called from the standard Arduino loop() function. When a touchscreen tap is detected, it uses the *Button_TT_collection* instance to find the button that was tapped, if any, and call its tap function to perform the desired button action.
 
 
 
@@ -505,9 +514,9 @@ The last piece of code necessary for the labelled button is to draw it using a *
 #define TOUCH_IRQ_PIN       A7
 
 // Include files when button tap response is enabled.
-#include <Button_TT_collection.h>
 #include <XPT2046_Touchscreen_TT.h>
 #include <TS_Display.h>
+#include <Button_TT_collection.h>
 
 // Variables required to support touchscreen and button taps.
 
