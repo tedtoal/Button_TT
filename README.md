@@ -678,8 +678,97 @@ Finally, the last thing to do is to register the master button tap/release funct
 
 That is all that is necessary to implement audible button press/release feedback.
 
+## Using buttons showing integer values as labels
 
+Often there is a need to show integer values that the user is able to alter. The *Button_TT* library supports this with four classes, each derived from class *Button_TT_label*, one class for each of four different types of integers: signed and unsigned, 8-bit and 16-bit. The classes are:
 
+> Button_TT_uint8: unsigned 8-bit integer
+>
+> Button_TT_uint16: unsigned 16-bit integer
+>
+> Button_TT_int8: signed 8-bit integer
+> 
+> Button_TT_int16: signed 16-bit integer
+
+All four classes are used the same way. They example here uses the *Button_TT_int8* class.
+
+Typically these buttons are created as non-tappable buttons. That is, they are only buttons in the sense that they create text strings on the display, usually within a rectangle. There is nothing that prevents making them tappable, and perhaps a program might do that and have a tap call up a keypad where the user could enter a new value. However, the simplest implementation is to use these as non-tappable buttons, and add a pair of *arrow* buttons next to each integer-valued button. The arrow buttons can be tapped to increment and decrement the number. This section only shows how to create the integer-valued button. The next section will show how to create and use arrow buttons.
+
+As with other button styles, the first step is to include the header file for the button style:
+
+```
+// Include file for using button with int8_t value.
+#include <Button_TT_int8.h>
+```
+
+Then, define a variable of the desired button class, giving it a unique button name:
+
+```
+// An int8_t button whose name is "int8Val".
+Button_TT_int8 btn_int8Val("int8Val");
+```
+
+The button variable is then initialized by calling its *initButton()* function. Again, the *initButton()* function comments and default argument values should first be examined in the *Button_TT_int8.h* file. The additional arguments for this style of button, starting after the button rectangle corner radius argument *rCorner*, are:
+
+```
+value         The int8_t value for the button, used to create the label string for the button.
+minValue      The minimum allowed value for value.
+maxValue      The maximum allowed value for value.
+degreeSym     If true, a degree symbol is drawn at the end of the label.
+showPlus      If true, a leading + is used for positive values in the label.
+checkValue    If not nullptr, a pointer to a function that checks a new button
+              value and can return an adjusted value if it is out of range.
+```
+
+There are often many buttons defined in a program, and often many of the *initButton()* argument values are the same for many buttons. It is therefore useful to define, in a section near the start of the .ino file, constants for the common *initButton()* argument values. For example, if rounded buttons are used but they always have the same corner radius, the following definition would be helpful for improving program clarity. Note the short name, to keep *initButton()* call statements shorter, since they tend to be long anyway:
+
+```
+// Useful constants for initializing buttons. These can be used as arguments to
+// the initButton() function.
+
+// Corner radius of buttons with rounded corners, in pixels.
+#define RAD 10
+```
+
+With that constant available, *initButton()* is called, typically in *setup()* or a function called by it:
+
+```
+  // Initialize btn_int8Val. Give it rounded corners, with initial value -5 and range -10 to +10.
+  btn_int8Val.initButton(lcd, "TL", 35, 68, 50, 26, ILI9341_BLACK, ILI9341_LIGHTGREY,
+    ILI9341_RED, "C", &font12, RAD, -5, -10, +10);
+```
+
+The most important initialization values are *value*, *minValue*, and *maxValue*, all *int8_t* types. The integer button classes each maintain three integer values as part of the class instance, one for the current button value and two for the minimum and maximum allowed values. One advantage of using these classes is that they automatically enforce the minimum and maximum values. Here, the initial value is -5 and the allowed range is from -10 (minValue) to +10 (maxValue).
+
+Finally, the button must be drawn, often in a screen draw function but perhaps simply within *setup():*
+
+```
+  btn_int8Val.drawButton();
+```
+
+Although typically a button like this does not have a button tap handler, we'll add one for illustration purposes. Tapping the button will *increment* the button value, wrapping it from its maximum value back to its minimum value:
+
+```
+// Handle tap of "btn_int8Val". Increment the value and wrap from max to min.
+void btnTap_int8Val(Button_TT& btn) {
+  int8 value = btn_int8Val.getValue() + 1;
+  int8 minValue = btn_int8Val.getMinValue();
+  int8 maxValue = btn_int8Val.getMaxValue();
+  if (value > maxValue)
+    value = minValue;
+  btn_int8Val.setValueAndDrawIfChanged(value);
+}
+```
+
+The button tap function uses the *Button_TT_int8* class functions *getValue()*, *getMinValue()*, *getMaxValue()*, and *setValueAndDrawIfChanged()*.
+
+The button tap function must of course be registered with the *screenButtons* object, perhaps from *setup():*
+
+```
+screenButtons->registerButton(btn_int8Val, btnTap_int8Val);
+```
+
+Thus, making a button tappable, once the basic tap code shown earlier is in place, is as simple as defining a tap function and registering it whenever the button is displayed.
 
 ## Contact
 
