@@ -493,11 +493,13 @@ The last piece of code necessary for the labelled button is to draw it using a *
   btn_Hello.drawButton();
 ```
 
+Buttons don't always need to be actual buttons to be tapped by a user. Label buttons in particular are useful simply as labels on the display. It may be more convenient to use buttons for text labels rather than simply writing the text string to the display, because then each screen element is created in the same manner. When buttons are used as text strings but are not tappable, often you will want to display the text string on the screen background without placing it inside a rectangle, which is done by setting the button outline and fill colors equal to the screen background color.
+
+However, *usually* one wants to allow the user to tap a button, then detect the tap and perform an appropriate action. The next section describes how to do this.
+
 ## Adding touchscreen support and detection of button taps
 
-Buttons don't always need to be actual buttons to be tapped by a user. Label buttons in particular are useful simply as labels on the display. It may be more convenient to use buttons for text labels rather than simply writing the text string to the display, because then each screen element is created in the same manner. However, *usually* one wants to allow the user to tap a button, then detect the tap and perform an appropriate action. The *Button_TT* library provides support to make this easier.
-
-The *Button_TT* library requires that your touchscreen uses an XPT2046 controller, which is common on low-cost touchscreens. The touchscreen must be controllable using the library *XPT2046_Touchscreen_TT*, which is an enhanced version of the *XPT2046_Touchscreen* library, so as long as that latter library works with your touchscreen, you can install the *XPT2046_Touchscreen_TT* library to provide button tap support. Example programs in that library allow you to test that it works correctly by itself and with your display.
+The *Button_TT* library provides support to make detection of button taps and responses to them easier to code. For this, the library requires that your touchscreen uses an XPT2046 controller, which is common on low-cost touchscreens. The touchscreen must be controllable using the library *XPT2046_Touchscreen_TT*, which is an enhanced version of the *XPT2046_Touchscreen* library. As long as that latter library works with your touchscreen, you can install the *XPT2046_Touchscreen_TT* library to provide button tap support. Example programs in that library allow you to test that it works correctly by itself and with your display.
 
 The *XPT2046_Touchscreen_TT* library has two pairs of files supporting the touchscreen. Files *XPT2046_Touchscreen_TT.h/.cpp* define class XPT2046_Touchscreen_TT that talks to the XPT2046 controller and has functions to test for taps and get their positions. Files *TS_Display.h/.cpp* define class TS_Display that provides several services for working with a combination of a touchscreen and a display, such as mapping touchscreen coordinates to display coordinates. To use the touchscreen with the *Button_TT* library, include both of those header files near the top of your .ino file:
 
@@ -692,7 +694,7 @@ Often there is a need to show integer values that the user is able to alter. The
 
 All four classes are used the same way. They example here uses the *Button_TT_int8* class.
 
-Typically these buttons are created as non-tappable buttons. That is, they are only buttons in the sense that they create text strings on the display, usually within a rectangle. There is nothing that prevents making them tappable, and perhaps a program might do that and have a tap call up a keypad where the user could enter a new value. However, the simplest implementation is to use these as non-tappable buttons, and add a pair of *arrow* buttons next to each integer-valued button. The arrow buttons can be tapped to increment and decrement the number. This section only shows how to create the integer-valued button. The next section will show how to create and use arrow buttons.
+Typically these are used as non-tappable buttons. That is, they are only buttons in the sense that they create numeric text strings on the display. They might not even show the number in a rectangle, but rather, as a number directly on the screen background (by setting the button outline and fill colors equal to the screen background color). There is nothing that prevents making them tappable, and perhaps a program might do that and have a tap call up a keypad where the user could enter a new value. However, the simplest implementation is to use these as non-tappable buttons, and add a pair of *arrow* buttons next to each integer-valued button. The arrow buttons can be tapped to increment and decrement the number. This section only shows how to create the integer-valued button. The next section will show how to create and use arrow buttons.
 
 As with other button styles, the first step is to include the header file for the button style:
 
@@ -769,6 +771,73 @@ screenButtons->registerButton(btn_int8Val, btnTap_int8Val);
 ```
 
 Thus, making a button tappable, once the basic tap code shown earlier is in place, is as simple as defining a tap function and registering it whenever the button is displayed.
+
+## Using triangular arrow buttons for increment/decrement
+
+The *Button_TT* library includes another pair of files, *Button_TT_arrow.h/.cpp* that define class *Button_TT_arrow*, which implements another button style, triangular-shaped buttons. These are *unlabelled* buttons. The intended use of them is as *increment* and *decrement* buttons for changing numeric values. As usual, the first step to use this style of buttons is to include the header file:
+
+```
+// Include file for using triangle buttons, usually used as arrow buttons.
+#include <Button_TT_arrow.h>
+```
+
+Then, a variable is defined for each arrow button. They are usually defined in pairs, one for increment and one for decrement, and coding clarity is improved by naming the button variables the same as the name of the button they will increment or decrement, with an appendix indicating which one it is. Each button can be oriented so that its tip lies in any of the four directions up, down, left, or right. It works well to place a button pair side-by-side, the left one with the tip to the left and the right with tip to right. This helps conserve limited screen space. The left-facing button would decrement the value and the right-facing button would increment the value:
+
+```
+// Define two arrow buttons (left and right, for decrement and increment) to go with btn_int8Val.
+Button_TT_arrow btn_int8Val_left("int8Val_left");
+Button_TT_arrow btn_int8Val_right("int8Val_right");
+
+// The tap function is shared by both arrow buttons. It invokes valueIncDec() on the int8val button.
+void btnTap_int8Val_delta(Button_TT& btn) {
+  btn_int8Val.valueIncDec(1, &btn);
+}
+```
+
+The *Button_TT_int8* function *valueIncDec()* handles all the work of incrementing or decrementing the button value, honoring its minValue and maxValue settings by doing nothing once the limit is reached. It even determines which of the two registered buttons for the function was the actual button that was pressed, by comparing the *btn* argument to the two button variables. The *amount* that the function adds to or subtracts from the button value is given by the first argument to the function, 1 above.
+
+The *initButton()* function for arrow buttons has the same arguments as the basic *Button_TT* button style, with the addition of one argument *(orient)* just after the first argument and two arguments after the x and y arguments:
+
+```
+orient  Orientation of triangle: U=UP, D=DOWN, L=LEFT, R=RIGHT.
+s1      Length of the base of the equilateral triangle.
+s2      Length of the other two triangle sides.
+```
+
+Using the same length for all three triangle sides looks good:
+
+```
+  // Initialize arrow buttons for int8val button.
+  btn_int8Val_left.initButton(lcd, 'L', "TR", 120, 65, 30, 30, ILI9341_BLACK, ILI9341_LIGHTGREY);
+  btn_int8Val_right.initButton(lcd, 'R', "TL", 130, 65, 30, 30, ILI9341_BLACK, ILI9341_LIGHTGREY);
+```
+
+Notice that the left-pointing triangle uses an *orient* value of 'L' while the right-pointing one uses 'R', and the *align* value that follows uses the opposite letters for the x-direction alignment, so the left-pointing one aligns its right (R) side at position x=120 and the right-pointing one aligns its left (L) side at position x=130.
+
+The buttons are drawn just after the *drawButton()* call for the associated *btn_int8Val* button:
+
+```
+  btn_int8Val_left.drawButton();
+  btn_int8Val_right.drawButton();
+```
+
+And they are registered just after the *registerButton()* call for the associated *btn_int8Val* button:
+
+```
+  screenButtons->registerButton(btn_int8Val_left, btnTap_int8Val_delta);
+  screenButtons->registerButton(btn_int8Val_right, btnTap_int8Val_delta);
+```
+
+With the above code, a pair of arrow buttons is implemented that will respectively decrement and increment the btn_int8Val value.
+
+## Creating new button styles with your own button classes
+
+## Using button values
+
+What if the initial button value is to be obtained from a program variable? The variable value can of course be used as the *value* argument to *initButton()*, but another coding design pattern might initialize button values *after initButton() calls*, using the *setValue()* button member function.
+
+How is the button value *used* within the program? One way is that it can simply be extracted from the button using the *getValue()* function. A more complex option 
+
 
 ## Contact
 
