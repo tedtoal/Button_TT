@@ -986,6 +986,144 @@ void processTapsAndReleases() {
 }
 ```
 
+## Storing settings in non-volatile memory
+
+Another often-desired feature of a system is to store system settings in some form of non-volatile memory, so they aren't reset system power is lost. Again, although support for that feature is not specifically part of the *Button_TT* library, it can easily be implemented within the framework already presented above.
+
+The Arduino microprocessor being used has EEPROM memory, which is non-volatile memory that stores the program. In at least some microprocessor architectures, this memory is available for use by the running program, in addition to its basic use for storing the program itself. This is true in the SAMD architecture, and the *FlashStorage_SAMD* library provides this support. Here (and in the *Buttons.ino* example program), that library is used to store program settings in EEPROM. If you use a microprocessor with a different architecture, you will need to investigate whether a similar library is available for it, and make the necessary changes to this example.
+
+The *FlashStorage_SAMD* library requires that two constants be defined, *EEPROM_EMULATION_SIZE* and *FLASH_DEBUG*, before including the library's main header file:
+
+```
+// EEPROM support currently only if SAMD architecture.
+#ifdef ARDUINO_ARCH_SAMD
+
+// It appears (page 29 of Atmel SAM D21E / SAM D21G / SAM D21J data sheet) that
+// the EEPROM page size is 64, and 4 pages must be erased at one time, giving an
+// effective page size of 4*64 = 256.  This seems to be confirmed by the fact
+// that FlashStorage_SAMD.hpp aligns the PPCAT variable to 256 bytes.
+// Use that minimum of four pages for our non-volatile storage.
+#define EEPROM_EMULATION_SIZE     (4 * 64)
+
+// Turn off debug messages.
+#define FLASH_DEBUG       0   // Use 0-2. Larger for more debugging messages
+
+// Now include flash storage library header file.
+// To be included only in one file to avoid `Multiple Definitions` Linker Error.
+#include <FlashStorage_SAMD.h>
+#else
+#error SAMD architecture is required to use EEPROM memory!
+#endif
+```
+
+Another constant must be defined, *WRITTEN_SIGNATURE*, whose value is probably arbitrary:
+
+```
+// Signature used at start of a flash memory block to mark the block as
+// containing valid data written by the application.
+const int WRITTEN_SIGNATURE = 0xBEEFDEED;
+```
+
+All data that needs to be stored in non-volatile memory must be collected together into a single struct. In our example here we assume that the only settings to be stored in EEPROM are the integer values of the two buttons btn_int8val and btn_uint8val:
+
+```
+// Structure containing non-volatile data to be stored in flash memory (with a
+// copy in regular memory). We can use this structure even if we don't have the
+// SAMD architecture support for storing it in EEPROM.
+struct nonvolatileSettings {
+  int8_t int8val;       // btn_int8Val value
+  uint8_t uint8val;     // btn_uint8Val value
+};
+```
+
+Two instances of that struct are defined, one containing the current system settings and the other containing the default values that are used to initialize EEPROM the first time it is used:
+
+```
+// The current non-volatile settings initialized from flash-based EEPROM (and
+// written back to EEPROM when the data changes).
+nonvolatileSettings NVsettings;
+
+// The default non-volatile settings when the settings need to be initialized.
+nonvolatileSettings defaults = {
+    0,      // int8val
+    0       // uint8val
+};
+```
+
+Two functions must be defined, one for reading the settings from EEPROM when the system starts up, and the other for storing new setting values in EEPROM when they change:
+
+```
+#ifdef ARDUINO_ARCH_SAMD
+
+// Read non-volatile settings from flash memory into 'settings'.  If flash
+// memory has not yet been initialized, initialize it with 'defaults'.
+void readNonvolatileSettings(nonvolatileSettings& settings, const nonvolatileSettings& defaults) {
+  // Initialize to only commit data when we call the commit function.
+  EEPROM.setCommitASAP(false);
+  // Check signature at address 0.
+  int signature;
+  uint16_t storedAddress = 0;
+  EEPROM.get(storedAddress, signature);
+  // If flash-based EEPROM is empty, write WRITTEN_SIGNATURE and defaults to it.
+  if (signature != WRITTEN_SIGNATURE) {
+    monitor.printf("EEPROM is uninitialized, writing defaults\n");
+    EEPROM.put(storedAddress, WRITTEN_SIGNATURE);
+    EEPROM.put(storedAddress + sizeof(signature), defaults);
+    EEPROM.commit();
+  }
+  // Read settings data from flash-based EEPROM.
+  EEPROM.get(storedAddress + sizeof(signature), settings);
+}
+
+// Write 'settings' to flash memory IF IT HAS CHANGED. Return true if it changed
+// and was written, else false.
+bool writeNonvolatileSettingsIfChanged(nonvolatileSettings& settings) {
+  int signature;
+  uint16_t storedAddress = 0;
+  nonvolatileSettings tmp;
+  EEPROM.get(storedAddress + sizeof(signature), tmp);
+  if (memcmp(&settings, &tmp, sizeof(nonvolatileSettings)) == 0)
+    return(false);
+  EEPROM.put(storedAddress + sizeof(signature), settings);
+  EEPROM.commit();
+  return(true);
+}
+
+#endif
+```
+
+During initialization, typically within the *setup()* function, the last settings stored in EEPROM are read to initialize the *NVsettings* variable:
+
+```
+  // Read non-volatile settings from flash memory (EEPROM) into NVsettings, or
+  // initialize EEPROM and NVsettings if EEPROM is uninitialized or corrupted.
+  // Note: each time the Arduino IDE stores a program in EEPROM, it erases these
+  // settings, so they will be reinitialized when this runs.
+  readNonvolatileSettings(NVsettings, defaults);
+```
+
+Later during initialization, *NVsettings* may be used to initialize other variables, as needed. Here we use  it to initialize the two integer button values:
+
+```
+  // Initialize integer button values.
+  btn_int8Val.setValue(NVsettings.int8val);
+  btn_uint8Val.setValue(NVsettings.uint8val);
+```
+
+When the settings values change, they must be stored again in EEPROM. The function *writeNonvolatileSettingsIfChanged()* defined above was made to only write settings if they have changed. This avoids time-consuming and potentially EEPROM-wearing writes when no change occurs, and it allows one to call that function often, even if no settings change is likely, without causing harm. One way to do this is to call the function *every time the Arduino standard *loop()* function is called.* Sometimes the setting value *only resides in NVsettings*, but in other cases, such as our integer buttons here, the settings reside elsewhere (in the buttons themselves) and must be copied to NVsettings. Here is the code that would be used in *loop()* to copy and save non-volatile settings when they change:
+
+```
+  // Save current values from btn_int8Val and btn_uint8Val to NVsettings.
+  NVsettings.int8val = btn_int8Val.getValue();
+  NVsettings.uint8val = btn_uint8Val.getValue();
+  // Save NVsettings to EEPROM, which only gets written if the settings actually changed.
+  writeNonvolatileSettingsIfChanged(NVsettings);
+```
+
+An alternative to this would be to create a "Save" button the user must press to save settings to non-volatile memory.
+
+To see the effect of this code, the system must be RESET after changing settings, then examined to see if the changed settings persisted.
+  
 ## Creating new button styles with your own button classes
 
 ## Using button values
