@@ -1123,7 +1123,398 @@ When the settings values change, they must be stored again in EEPROM. The functi
 An alternative to this would be to create a "Save" button the user must press to save settings to non-volatile memory.
 
 To see the effect of this code, the system must be RESET after changing settings, then examined to see if the changed settings persisted.
-  
+
+## Adding more screens: touchscreen calibration screen
+
+Most systems with a display have more than one screen layout that are displayed at different times. Some code reorganization is needed to support this. In this section a design pattern is presented to help organize multiple screens. Although this is not part of the *Button_TT* library, the pattern fits well within the *Button_TT* code already presented.
+
+A second screen is added here in addition to the one already defined above (referred to as the *main screen*). The second screen will be a touchscreen *calibration screen*, based on the *DisplayCalibration.ino* example program in the *XPT2046_Touchscreen_TT* library.
+
+Before showing the calibration portion of the code, the elements of the multi-screen design pattern are presented.
+
+To begin, define an enum that enumerates the different screens your system will have, and define a variable of that enum type, which holds the currently displayed screen number:
+
+```
+// Display screens.
+typedef enum _eScreen {
+  SCREEN_MAIN,
+  SCREEN_CALIBRATION
+} eScreen;
+
+// Currently displayed screen.
+eScreen currentScreen;
+```
+
+
+// Declare function for drawing the current screen. It is called by button
+// handlers that wish to switch screens.
+void drawCurrentScreen();
+
+// It is convenient to define a function to initialize the screen buttons,
+// because typically you will have multiple different screens, and providing a
+// separate initialization function for each one keeps things cleaner.
+
+// Initialize the main screen.
+void initButtons_MainScreen(void) {
+
+  // Initialize btn_Simple.
+  btn_Simple.initButton(lcd, "TC", 120, 5, 40, 20, ILI9341_BLACK, ILI9341_BLUE);
+
+  // Initialize btn_Hello.
+  btn_Hello.initButton(lcd, "TC", 120, 30, 200, 26, ILI9341_BLACK,
+    ILI9341_LIGHTGREY, ILI9341_BLUE, "C", "Hello World!", false, &font12);
+
+  // Initialize btn_int8Val. Give it rounded corners, with initial value -5 and range -10 to +10.
+  btn_int8Val.initButton(lcd, "TL", 35, 68, 50, 26, ILI9341_BLACK, ILI9341_LIGHTGREY,
+    ILI9341_RED, "C", &font12, RAD, -5, -10, +10);
+
+  // Initialize arrow buttons for int8val button.
+  btn_int8Val_left.initButton(lcd, 'L', "TR", 120, 65, 30, 30, ILI9341_BLACK, ILI9341_LIGHTGREY);
+  btn_int8Val_right.initButton(lcd, 'R', "TL", 130, 65, 30, 30, ILI9341_BLACK, ILI9341_LIGHTGREY);
+
+  // Initialize btn_uint8Val. Give it rounded corners, with initial value 10 and
+  // range 0 to 10, and add a degree symbol after it. Display "--" for 0.
+  btn_uint8Val.initButton(lcd, "TL", 35, 113, 50, 26, ILI9341_BLACK, ILI9341_LIGHTGREY,
+    ILI9341_RED, "C", &font12, RAD, +10, 0, +10, true, "--");
+
+  // Initialize arrow buttons for uint8val button.
+  btn_uint8Val_left.initButton(lcd, 'L', "TR", 120, 110, 30, 30, ILI9341_BLACK, ILI9341_LIGHTGREY);
+  btn_uint8Val_right.initButton(lcd, 'R', "TL", 130, 110, 30, 30, ILI9341_BLACK, ILI9341_LIGHTGREY);
+
+  // Initialize btn_Calibrate. Give it rounded corners, and use value 10 just for
+  btn_Calibrate.initButton(lcd, "CC", 120, 170, BTN_WIDTH, BTN_HEIGHT, ILI9341_BLACK,
+    ILI9341_PINK, ILI9341_BLACK, "C", "Calibrate", false, &font12, RAD);
+}
+
+
+// It is ALSO convenient to define a function to draw the screen, because
+// typically you will have multiple different screens that you will want to be
+// able to switch between.
+
+// Draw the main screen.
+void drawMainScreen() {
+
+  // Clear all existing button registrations for tap detection.
+  screenButtons->clear();
+
+  // Fill screen with white.
+  lcd->fillScreen(ILI9341_WHITE);
+
+  // Draw screen buttons.
+  // Also, register buttons with screenButtons object to handle button taps/releases.
+
+  btn_Simple.drawButton();
+  screenButtons->registerButton(btn_Simple, btnTap_Simple);
+
+  btn_Hello.drawButton();
+  screenButtons->registerButton(btn_Hello, btnTap_Hello);
+
+  btn_int8Val.drawButton();
+  screenButtons->registerButton(btn_int8Val, btnTap_int8Val);
+
+  btn_int8Val_left.drawButton();
+  btn_int8Val_right.drawButton();
+  screenButtons->registerButton(btn_int8Val_left, btnTap_int8Val_delta);
+  screenButtons->registerButton(btn_int8Val_right, btnTap_int8Val_delta);
+
+  btn_uint8Val.drawButton();
+  btn_uint8Val_left.drawButton();
+  btn_uint8Val_right.drawButton();
+  screenButtons->registerButton(btn_uint8Val_left, btnTap_uint8Val_delta);
+  screenButtons->registerButton(btn_uint8Val_right, btnTap_uint8Val_delta);
+
+  btn_Calibrate.drawButton();
+  screenButtons->registerButton(btn_Calibrate, btnTap_Calibrate);
+}
+
+// It is ALSO convenient to define a function to perform any operations required
+// by the screen, because typically you will have multiple different screens and
+// each will require its own unique processing.
+
+// Handle loop() processing for the main screen.
+void loopMainScreen() {
+
+  // Currently the only thing that needs to be done in the main screen is to
+  // save current non-volatile values in non-volatile memory if they have
+  // changed.
+
+  // Save current values from btn_int8Val and btn_uint8Val to NVsettings.
+  NVsettings.int8val = btn_int8Val.getValue();
+  NVsettings.uint8val = btn_uint8Val.getValue();
+  // Save NVsettings to EEPROM, which only gets written if the settings actually changed.
+  writeNonvolatileSettingsIfChanged(NVsettings);
+}
+
+// Draw the current screen.
+void drawCurrentScreen() {
+  switch (currentScreen) {
+  case SCREEN_MAIN:
+    drawMainScreen();
+    break;
+  case SCREEN_CALIBRATION:
+    drawCalibrationScreen();
+    break;
+  }
+}
+
+// Handle loop() processing for the current screen.
+void loopCurrentScreen() {
+  switch (currentScreen) {
+  case SCREEN_MAIN:
+    loopMainScreen();
+    break;
+  case SCREEN_CALIBRATION:
+    loopCalibrationScreen();
+    break;
+  }
+}
+
+  // Initialize the buttons on each screen.
+  initButtons_MainScreen();
+  initButtons_CalibrationScreen();
+
+  // Draw the main screen.
+  currentScreen = SCREEN_MAIN;
+  drawCurrentScreen();
+
+  // Handle loop() processing for the current screen.
+  loopCurrentScreen();
+
+}
+
+
+// Structure containing non-volatile data to be stored in flash memory (with a
+// copy in regular memory). We use this structure even if we don't have the SAMD
+// architecture support for storing it in EEPROM.
+struct nonvolatileSettings {
+  int8_t int8val;       // btn_int8Val value
+  uint8_t uint8val;     // btn_uint8Val value
+  int16_t TS_LR_X;      // Touchscreen calibration parameters.
+  int16_t TS_LR_Y;
+  int16_t TS_UL_X;
+  int16_t TS_UL_Y;
+};
+
+// A labelled button whose name is "calibrate".
+Button_TT_label btn_Calibrate("calibrate");
+
+// Handle tap of "btn_Calibrate". We switch to the calibration screen.
+void btnTap_Calibrate(Button_TT& btn) {
+  currentScreen = SCREEN_CALIBRATION;
+  drawCurrentScreen();
+}
+
+
+
+// CALIBRATION SCREEN buttons and handler functions.
+//
+// The Calibration screen initially shows a Cancel button, a message to touch
+// the "+", and a single "+" in one corner. When Cancel is touched the screen
+// exits back to the main screen without changing the calibration setting. If
+// the "+" is touched, it is erased and a second "+" in the opposite corner is
+// displayed. If that "+" is also touched, it is erased, calibration settings
+// are recomputed and temporarily changed, a Save button is shown along with the
+// Cancel button, a message is displayed to touch anywhere to test calibration,
+// and subsequent touches cause a "+" of another color to be drawn at that
+// position. Touching Cancel reverts to original calibration settings, while
+// touching Save saves the new calibration settings to nonvolatile memory and
+// it exits back to the main screen.
+
+Button_TT_label label_Calibration("CalibrationScreen");
+Button_TT_label btn_CalibrationCancel("CalibrationCancel");
+Button_TT_label btn_CalibrationSave("CalibrationSave");
+
+// Initialize the calibration screen.
+void initButtons_CalibrationScreen(void) {
+
+  label_Calibration.initButton(lcd, "TC", 120, 5, TEW, TEW, TRANSPARENT_COLOR,
+    TRANSPARENT_COLOR, ILI9341_DARKGREEN, "C", "Calibrate", false, &font12);
+  btn_CalibrationCancel.initButton(lcd, "BL", 5, 313, BTN_WIDTH, BTN_HEIGHT,
+    ILI9341_BLACK, ILI9341_PINK, ILI9341_BLACK, "C", "Cancel", false, &font12, RAD);
+  btn_CalibrationSave.initButton(lcd, "BR", 235, 313, BTN_WIDTH, BTN_HEIGHT,
+    ILI9341_BLACK, ILI9341_PINK, ILI9341_BLACK, "C", "Save", false, &font12, RAD);
+}
+
+// Length of each arm of "+" sign.
+#define PLUS_ARM_LEN 10
+
+// Draw a plus sign at a specified display location.
+void drawPlus(int16_t x, int16_t y, int16_t color, uint8_t len = PLUS_ARM_LEN) {
+  lcd->drawFastVLine(x, y-len, 2*len+1, color);
+  lcd->drawFastHLine(x-len, y, 2*len+1, color);
+}
+
+// States during calibration and subsequent showing of tapped points.
+typedef enum _eCalibState {
+  STATE_WAIT_UL,            // Wait for user to tap + at upper-left
+  STATE_WAIT_UL_RELEASE,    // Wait for him to release the tap
+  STATE_WAIT_LR,            // Wait for user to tap + at lower-right
+  STATE_WAIT_LR_RELEASE,    // Wait for him to release the tap
+  STATE_WAIT_POINT_SHOW_IT, // Wait for user to tap anywhere, then draw "+" there
+  STATE_WAIT_RELEASE        // Wait for him to release the tap
+} eCalibState;
+
+// Current state of calibration screen interaction with user.
+eCalibState calibState;
+
+// Display UL and LR calibration positions and corresponding touchscreen
+// calibration coordinates.
+int16_t x_UL, y_UL, x_LR, y_LR;
+int16_t TSx_UL, TSy_UL, TSx_LR, TSy_LR;
+
+// Print string S to display at cursor position (x,y) in specified color.
+void lcd_print(int16_t x, int16_t y, int16_t color, const char* S) {
+  lcd->setCursor(x, y);
+  lcd->setTextColor(color);
+  lcd->print(S);
+}
+
+// Text for user instructions to tap "+".
+#define TEXT_TAP_PLUS "Tap the +"
+
+// Declare button handler functions for the Calibration screen.
+void btnTap_CalibrationCancel(Button_TT& btn);
+void btnTap_CalibrationSave(Button_TT& btn);
+
+// Draw the Calibration screen and register its buttons with the screenButtons
+// object. Save button is only drawn if drawSaveButton=true.
+void drawCalibrationScreen(bool drawSaveButton=false) {
+
+  // Clear all existing button registrations.
+  screenButtons->clear();
+
+  // Fill screen with white.
+  lcd->fillScreen(ILI9341_WHITE);
+
+  // Draw screen buttons.
+  label_Calibration.drawButton();
+  btn_CalibrationCancel.drawButton();
+  screenButtons->registerButton(btn_CalibrationCancel, btnTap_CalibrationCancel);
+  if (drawSaveButton) {
+    btn_CalibrationSave.drawButton();
+    screenButtons->registerButton(btn_CalibrationSave, btnTap_CalibrationSave);
+  }
+
+  // Get position of two display points at which to draw "+" signs and require
+  // that the user tap them to calibrate the touchscreen.
+  ts_display->GetCalibration_UL_LR(PLUS_ARM_LEN+2, &x_UL, &y_UL, &x_LR, &y_LR);
+
+  // Paint first "+" and wait for user to tap that point.
+  drawPlus(x_UL, y_UL, ILI9341_BLUE);
+  lcd_print(20, 60, ILI9341_RED, TEXT_TAP_PLUS);
+  calibState = STATE_WAIT_UL;
+}
+
+// Button tap handlers for the Calibration screen.
+
+// Handle tap of Cancel button in Calibration screen. We revert calibration
+// parameters to the original and switch back to main screen.
+void btnTap_CalibrationCancel(Button_TT& btn) {
+  ts_display->setTS_calibration(NVsettings.TS_LR_X, NVsettings.TS_LR_Y,
+    NVsettings.TS_UL_X, NVsettings.TS_UL_Y);
+  currentScreen = SCREEN_MAIN;
+  drawMainScreen();
+}
+
+// Handle tap of Save button in Calibration screen. We save current calibration
+// parameters into "NVsettings" and switch back to the main screen.
+void btnTap_CalibrationSave(Button_TT& btn) {
+  ts_display->getTS_calibration(&NVsettings.TS_LR_X, &NVsettings.TS_LR_Y,
+    &NVsettings.TS_UL_X, &NVsettings.TS_UL_Y);
+  currentScreen = SCREEN_MAIN;
+  drawMainScreen();
+}
+
+// Handle loop() processing for the calibration screen.
+void loopCalibrationScreen() {
+  boolean isTouched = touch->touched();
+  TS_Point p;
+  if (isTouched)
+    p = touch->getPoint();
+
+  switch (calibState) {
+
+  case STATE_WAIT_UL:
+    if (isTouched) {
+      // Record the touchscreen coordinates.
+      TSx_UL = p.x;
+      TSy_UL = p.y;
+      // Play sound.
+      playSound(true);
+      calibState = STATE_WAIT_UL_RELEASE;
+    }
+    break;
+
+  case STATE_WAIT_UL_RELEASE:
+    if (!isTouched) {
+      // Erase the first plus and instructions.
+      drawPlus(x_UL, y_UL, ILI9341_WHITE);
+      lcd_print(20, 60, ILI9341_WHITE, TEXT_TAP_PLUS);
+      // Paint second + and wait for user to tap that point.
+      drawPlus(x_LR, y_LR, ILI9341_BLUE);
+      lcd_print(120, 260, ILI9341_RED, TEXT_TAP_PLUS);
+      // Stop sound.
+      playSound(false);
+      calibState = STATE_WAIT_LR;
+    }
+    break;
+
+  case STATE_WAIT_LR:
+    if (isTouched) {
+      // Record the touchscreen coordinates.
+      TSx_LR = p.x;
+      TSy_LR = p.y;
+      // Play sound.
+      playSound(true);
+      calibState = STATE_WAIT_LR_RELEASE;
+    }
+    break;
+
+  case STATE_WAIT_LR_RELEASE:
+    if (!isTouched) {
+      // Map the two touchscreen points to the correct calibration values at the
+      // extreme ends of the display. Set resulting calibration parameters as the
+      // new calibration parameters in ts_display.
+      int16_t TS_LR_X, TS_LR_Y, TS_UL_X, TS_UL_Y;
+      ts_display->findTS_calibration(x_UL, y_UL, x_LR, y_LR, TSx_UL, TSy_UL, TSx_LR, TSy_LR,
+        &TS_LR_X, &TS_LR_Y, &TS_UL_X, &TS_UL_Y);
+      ts_display->setTS_calibration(TS_LR_X, TS_LR_Y, TS_UL_X, TS_UL_Y);
+      // Redraw the screen with "Save" button and show new instructions.
+      drawCalibrationScreen(true);
+      lcd_print(10, 200, ILI9341_RED, "Tap to test calibration");
+      // Stop sound.
+      playSound(false);
+      calibState = STATE_WAIT_POINT_SHOW_IT;
+    }
+    break;
+
+  case STATE_WAIT_POINT_SHOW_IT:
+    if (isTouched) {
+      // Map touched point to display and draw a green "+" at that point.
+      int16_t x, y;
+      ts_display->mapTStoDisplay(p.x, p.y, &x, &y);
+      drawPlus(x, y, ILI9341_DARKGREEN);
+      // Play sound.
+      playSound(true);
+      calibState = STATE_WAIT_RELEASE;
+    }
+    break;
+
+  case STATE_WAIT_RELEASE:
+    if (!isTouched) {
+      // Stop sound.
+      playSound(false);
+      calibState = STATE_WAIT_POINT_SHOW_IT;
+    }
+    break;
+
+  }
+
+  // Don't turn off backlight in calibration mode.
+  MSsinceLastTouchBeforeBacklight = 0;
+}
+
+
 ## Creating new button styles with your own button classes
 
 ## Using button values
