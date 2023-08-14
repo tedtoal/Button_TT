@@ -579,7 +579,15 @@ void btnTap_Hello(Button_TT& btn) {
 
 The above functions make use of the basic button functions *getFillColor()*, *setFillColor()*, *getLabel()*, and *setLabel()*, and they both call the *drawButton()* function to redraw the button on the screen, since its appearance has been changed.
 
-Another function must be defined that checks for touchscreen taps. It is called from the standard Arduino loop() function. It uses the *ts_display* instance to test for a touchscreen tap, and the *screenButtons* instance to find the button that was tapped and call its tap function to perform the desired button action:
+The button tap functions must be associated with their actual button variables by registering each one with the *screenButtons* object. This may be done during initialization, either directly within *setup()* or in a function called by it. However, often there will be several different screens that are displayed at different times depending on user activity, and each time a new screen is displayed, its buttons must be re-registered. The complexities introduced by using multiple screens will be introduced later. Here, we will assume that the registration of buttons is done within *setup()*:
+  
+```
+  // Register buttons with screenButtons object to handle button taps/releases.
+  screenButtons->registerButton(btn_Simple, btnTap_Simple);
+  screenButtons->registerButton(btn_Hello, btnTap_Hello);
+```
+
+The last thing to do to support button taps is to define another function that checks for touchscreen taps. It is called from the standard Arduino loop() function. It uses the *ts_display* instance to test for a touchscreen tap, and the *screenButtons* instance to find the button that was tapped and call its tap function to perform the desired button action:
 
 ```
 // Check for touch screen tap or release and use ScreenButtons to process it.
@@ -604,21 +612,16 @@ void processTapsAndReleases() {
 }
 ```
 
-  // Also, register buttons with screenButtons object to handle button taps/releases.
+This function could instead be placed directly within the Arduino *loop()* function, but instead it is cleaner to define it as a separate function and call it from *loop():*
 
-  screenButtons->registerButton(btn_Simple, btnTap_Simple);
-
-  screenButtons->registerButton(btn_Hello, btnTap_Hello);
-
-
-  // Clear all existing button registrations for tap detection.
-  screenButtons->clear();
-
-
+```
+// Standard Arduino loop() function.
+void loop() {
   // Process button taps/releases for the current screen, which has registered
-  // its buttons with the screenButtons object, which is used to test for button
-  // taps and call the button tap handler function.
+  // its buttons with the screenButtons object.
   processTapsAndReleases();
+}
+```
 
 
 
