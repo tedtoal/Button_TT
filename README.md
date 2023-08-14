@@ -2,7 +2,7 @@
 
 ## Draws buttons on a pixel display and detects button taps
 
-The ***Button_TT*** library defines classes and functions to support drawing buttons on a pixel display. Support is included for various types of buttons, as well as button hit-testing.
+The ***Button_TT*** library defines classes and functions to support drawing buttons on a pixel display. Support is included for various types of buttons, as well as button hit-testing. This lengthy document fully describes how to use the library.
 
 ## Required libraries
 
