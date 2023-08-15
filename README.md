@@ -607,7 +607,7 @@ void processTapsAndReleases() {
 
   // Handle a release event.
   case TS_RELEASE_EVENT:
-    // Check for a button release. Only one button press at a time can be detected.
+    // Check for a button release. Only one button tap at a time can be detected.
     screenButtons->release();
     break;
   }
@@ -796,7 +796,7 @@ void btnTap_int8Val_delta(Button_TT& btn) {
 }
 ```
 
-The *Button_TT_int8* function *valueIncDec()* handles all the work of incrementing or decrementing the button value, honoring its minValue and maxValue settings by doing nothing once the limit is reached. It even determines which of the two registered buttons for the function was the actual button that was pressed, by comparing the *btn* argument to the two button variables. The *amount* that the function adds to or subtracts from the button value is given by the first argument to the function, 1 above.
+The *Button_TT_int8* function *valueIncDec()* handles all the work of incrementing or decrementing the button value, honoring its minValue and maxValue settings by doing nothing once the limit is reached. It even determines which of the two registered buttons for the function was the actual button that was tapped, by comparing the *btn* argument to the two button variables. The *amount* that the function adds to or subtracts from the button value is given by the first argument to the function, 1 above.
 
 The *initButton()* function for arrow buttons has the same arguments as the basic *Button_TT* button style, with the addition of one argument *(orient)* just after the first argument and two arguments after the x and y arguments:
 
@@ -979,7 +979,7 @@ void processTapsAndReleases() {
     // Release events reset the backlight timer.
     MSsinceLastTouchBeforeBacklight = 0;
     MSatLastBacklightTimerUpdate = millis();
-    // Check for a button release. Only one button press at a time can be detected.
+    // Check for a button release. Only one button tap at a time can be detected.
     screenButtons->release();
     break;
   }
@@ -1120,7 +1120,7 @@ When the settings values change, they must be stored again in EEPROM. The functi
   writeNonvolatileSettingsIfChanged(NVsettings);
 ```
 
-An alternative to this would be to create a "Save" button the user must press to save settings to non-volatile memory.
+An alternative to this would be to create a "Save" button the user must tap to save settings to non-volatile memory.
 
 To see the effect of this code, the system must be RESET after changing settings, then examined to see if the changed settings persisted.
 
@@ -1621,16 +1621,15 @@ void loopCalibrationScreen() {
   // Don't turn off display backlight in calibration mode.
   MSsinceLastTouchBeforeBacklight = 0;
 }
-
-
-## Creating new button styles with your own button classes
+```
 
 ## Using button values
 
-What if the initial button value is to be obtained from a program variable? The variable value can of course be used as the *value* argument to *initButton()*, but another coding design pattern might initialize button values *after initButton() calls*, using the *setValue()* button member function.
+How is a button *used* within the program? Some buttons perform actions immediately upon being tapped, such as the "Cancel" and "Save" buttons in the previous section. Others are simply labels that don't change. Some buttons may be values that *do change*, such as buttons that hold and display integer values displayed. A simple text label button could also change its label. For example, maybe a thermostat mode button changes its label between "Off", "On", and "Auto" each time it is tapped. How does a program *access* these button values when it needs them? For integer-valued buttons the code would call the button *getValue()* function to obtain the current value. For label buttons, it could call the *getLabel()* function, but a better method might be to use an enum to represent the possible text strings the button can display, with a variable holding the current enum value, and each time the button is pressed, the enum value is advanced and the new value translated into a string that is set as the new button text by calling *setLabel()*. Then, the button value is always available in the enum variable.
 
-How is the button value *used* within the program? One way is that it can simply be extracted from the button using the *getValue()* function. A more complex option 
+When buttons are initialized, they must be set to their initial values. Rather than coding a fixed value in the *initButton()* call, the value might instead come from a variable, such as for example the *NVsettings* variable used in a section above to illustrate use of EEPROM to store program settings. Another method is to initialize the button to a fixed value (such as for example its longest possible string, if the button is being auto-sized), and after *initButton()* returns, call *setLabel()* to set the actual desired initial label, or call *setValue()* to set the desired initial value of integer-valued buttons.
 
+## Creating new button styles with your own button classes
 
 ## Contact
 
