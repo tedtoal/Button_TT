@@ -1128,7 +1128,7 @@ To see the effect of this code, the system must be RESET after changing settings
 
 Most systems with a display have more than one screen layout that are displayed at different times. Some code reorganization is needed to support this. In this section a design pattern is presented to help organize multiple screens. Although this is not part of the *Button_TT* library, the pattern fits well within the *Button_TT* code already presented.
 
-A second screen is added here in addition to the one already defined above (referred to as the *main screen*). The second screen will be a touchscreen *calibration screen*, based on the *DisplayCalibration.ino* example program in the *XPT2046_Touchscreen_TT* library. In this section, the elements of the multi-screen design pattern are presented, with the changes needed to the previously presented code above. The next section will show the code necessary to actually implement the calibration screen.
+A second screen is added here in addition to the one already defined above (referred to as the *main screen*). The second screen will be a touchscreen *calibration screen*, based on the *TS_DisplayCalibrate.ino* example program in the *XPT2046_Touchscreen_TT* library. In this section, the elements of the multi-screen design pattern are presented, with the changes needed to the previously presented code above. The next section will show the code necessary to actually implement the calibration screen.
 
 To begin, define an enum that enumerates the different screens your system will have, and define a variable of that enum type, which holds the currently displayed screen number:
 
@@ -1416,7 +1416,7 @@ void initButtons_CalibrationScreen(void) {
 
 Notice that the Calibration button's outline and fill color are set to *TRANSPARENT_COLOR* so the label "Calibrate" will appear on the screen background with no surrounding rectangle. If the text were not fixed it would be necessary to use the screen background color instead of *TRANSPARENT_COLOR*.
 
-Calibration requires that a "+" sign be drawn in two screen corners and then the user must click carefully on them. Here is code to draw the "+" signs:
+Calibration requires that a "+" sign be drawn in two screen corners and then the user must click carefully on them. Define a function to draw the "+" signs:
 
 ```
 // Length of each arm of "+" sign.
@@ -1429,6 +1429,49 @@ void drawPlus(int16_t x, int16_t y, int16_t color, uint8_t len = PLUS_ARM_LEN) {
 }
 ```
 
+We will display a string on the display near the "+" sign instructing the user to tap it. Define a function to print a string at a specified position:
+
+```
+// Print string S to display at cursor position (x,y) in specified color.
+void lcd_print(int16_t x, int16_t y, int16_t color, const char* S) {
+  lcd->setCursor(x, y);
+  lcd->setTextColor(color);
+  lcd->print(S);
+}
+```
+
+Define a constant holding the string for instructing user:
+
+```
+// Text for user instructions to tap "+".
+#define TEXT_TAP_PLUS "Tap the +"
+```
+
+Define tap handlers for the Cancel and Save buttons:
+
+```
+// Handle tap of Cancel button in Calibration screen. Revert calibration
+// parameters to the original and switch back to main screen.
+void btnTap_CalibrationCancel(Button_TT& btn) {
+  ts_display->setTS_calibration(NVsettings.TS_LR_X, NVsettings.TS_LR_Y,
+    NVsettings.TS_UL_X, NVsettings.TS_UL_Y);
+  currentScreen = SCREEN_MAIN;
+  drawMainScreen();
+}
+
+// Handle tap of Save button in Calibration screen. Save current calibration
+// parameters into "NVsettings" and switch back to the main screen.
+void btnTap_CalibrationSave(Button_TT& btn) {
+  ts_display->getTS_calibration(&NVsettings.TS_LR_X, &NVsettings.TS_LR_Y,
+    &NVsettings.TS_UL_X, &NVsettings.TS_UL_Y);
+  currentScreen = SCREEN_MAIN;
+  drawMainScreen();
+}
+```
+
+The workhorse of the calibration screen is a state machine operated in function *loopCalibrationScreen()* that waits for the user to tap on each "+" sign. After he taps them in opposing corners of the display, the calibration parameters are computed and become the new parameters for translating screen taps to display coordinates. The user can then tap the screen further to test the new calibration, with a "+" sign drawn at each tapped position. If satisfied he can tap "Save" to save the new calibration or "Cancel" to revert back to the previous one. This state machine code is taken from *TS_DisplayCalibrate.ino* in the *XPT_2046_Touchscreen_TT* library. Define an enum of the states and a variable that holds the current state:
+
+```
 // States during calibration and subsequent showing of tapped points.
 typedef enum _eCalibState {
   STATE_WAIT_UL,            // Wait for user to tap + at upper-left
@@ -1441,26 +1484,20 @@ typedef enum _eCalibState {
 
 // Current state of calibration screen interaction with user.
 eCalibState calibState;
+```
 
+Also define variables to hold upper-left and lower-right calibration tap positions and the corresponding touchscreen positions:
+
+```
 // Display UL and LR calibration positions and corresponding touchscreen
 // calibration coordinates.
 int16_t x_UL, y_UL, x_LR, y_LR;
 int16_t TSx_UL, TSy_UL, TSx_LR, TSy_LR;
+```
 
-// Print string S to display at cursor position (x,y) in specified color.
-void lcd_print(int16_t x, int16_t y, int16_t color, const char* S) {
-  lcd->setCursor(x, y);
-  lcd->setTextColor(color);
-  lcd->print(S);
-}
+The *drawCalibrationScreen()* function is now defined. Unlike our previous screen draw functions, this one has an argument, *drawSaveButton*, that defaults to false. We call the function with the argument set true after the user taps the second "+" sign:
 
-// Text for user instructions to tap "+".
-#define TEXT_TAP_PLUS "Tap the +"
-
-// Declare button handler functions for the Calibration screen.
-void btnTap_CalibrationCancel(Button_TT& btn);
-void btnTap_CalibrationSave(Button_TT& btn);
-
+```
 // Draw the Calibration screen and register its buttons with the screenButtons
 // object. Save button is only drawn if drawSaveButton=true.
 void drawCalibrationScreen(bool drawSaveButton=false) {
@@ -1471,7 +1508,7 @@ void drawCalibrationScreen(bool drawSaveButton=false) {
   // Fill screen with white.
   lcd->fillScreen(ILI9341_WHITE);
 
-  // Draw screen buttons.
+  // Draw and register screen buttons.
   label_Calibration.drawButton();
   btn_CalibrationCancel.drawButton();
   screenButtons->registerButton(btn_CalibrationCancel, btnTap_CalibrationCancel);
@@ -1480,37 +1517,23 @@ void drawCalibrationScreen(bool drawSaveButton=false) {
     screenButtons->registerButton(btn_CalibrationSave, btnTap_CalibrationSave);
   }
 
-  // Get position of two display points at which to draw "+" signs and require
-  // that the user tap them to calibrate the touchscreen.
+  // Get position of the two corner display points at which to draw "+" signs
+  // to be tapped.
   ts_display->GetCalibration_UL_LR(PLUS_ARM_LEN+2, &x_UL, &y_UL, &x_LR, &y_LR);
 
-  // Paint first "+" and wait for user to tap that point.
+  // Draw first "+" and set state to wait for user to tap that point.
   drawPlus(x_UL, y_UL, ILI9341_BLUE);
   lcd_print(20, 60, ILI9341_RED, TEXT_TAP_PLUS);
   calibState = STATE_WAIT_UL;
 }
+```
 
-// Button tap handlers for the Calibration screen.
+The final function to define for the Calibration screen is *loopCalibrationScreen()*, which runs the state engine. This function tests for touchscreen touches independently of and in parallel with *processTapsAndReleases()*. This uses the previously-defined *playSound()* function to play a sound when the "+" is touched.
 
-// Handle tap of Cancel button in Calibration screen. We revert calibration
-// parameters to the original and switch back to main screen.
-void btnTap_CalibrationCancel(Button_TT& btn) {
-  ts_display->setTS_calibration(NVsettings.TS_LR_X, NVsettings.TS_LR_Y,
-    NVsettings.TS_UL_X, NVsettings.TS_UL_Y);
-  currentScreen = SCREEN_MAIN;
-  drawMainScreen();
-}
-
-// Handle tap of Save button in Calibration screen. We save current calibration
-// parameters into "NVsettings" and switch back to the main screen.
-void btnTap_CalibrationSave(Button_TT& btn) {
-  ts_display->getTS_calibration(&NVsettings.TS_LR_X, &NVsettings.TS_LR_Y,
-    &NVsettings.TS_UL_X, &NVsettings.TS_UL_Y);
-  currentScreen = SCREEN_MAIN;
-  drawMainScreen();
-}
-
+```
 // Handle loop() processing for the calibration screen.
+// Note that this functions completely independently and in parallel with the
+// processTapsAndReleases() function, which also monitors touch screen actions.
 void loopCalibrationScreen() {
   boolean isTouched = touch->touched();
   TS_Point p;
@@ -1595,7 +1618,7 @@ void loopCalibrationScreen() {
 
   }
 
-  // Don't turn off backlight in calibration mode.
+  // Don't turn off display backlight in calibration mode.
   MSsinceLastTouchBeforeBacklight = 0;
 }
 
