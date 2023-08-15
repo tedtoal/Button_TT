@@ -1124,13 +1124,11 @@ An alternative to this would be to create a "Save" button the user must press to
 
 To see the effect of this code, the system must be RESET after changing settings, then examined to see if the changed settings persisted.
 
-## Adding more screens: touchscreen calibration screen
+## Adding more screens
 
 Most systems with a display have more than one screen layout that are displayed at different times. Some code reorganization is needed to support this. In this section a design pattern is presented to help organize multiple screens. Although this is not part of the *Button_TT* library, the pattern fits well within the *Button_TT* code already presented.
 
-A second screen is added here in addition to the one already defined above (referred to as the *main screen*). The second screen will be a touchscreen *calibration screen*, based on the *DisplayCalibration.ino* example program in the *XPT2046_Touchscreen_TT* library.
-
-Before showing the calibration portion of the code, the elements of the multi-screen design pattern are presented.
+A second screen is added here in addition to the one already defined above (referred to as the *main screen*). The second screen will be a touchscreen *calibration screen*, based on the *DisplayCalibration.ino* example program in the *XPT2046_Touchscreen_TT* library. In this section, the elements of the multi-screen design pattern are presented, with the changes needed to the previously presented code above. The next section will show the code necessary to actually implement the calibration screen.
 
 To begin, define an enum that enumerates the different screens your system will have, and define a variable of that enum type, which holds the currently displayed screen number:
 
@@ -1203,11 +1201,9 @@ void loopCurrentScreen() {
 }
 ```
 
+The main screen initialization code previously included in *setup()* is moved to the new function *initMainScreen()*:
 
-// It is convenient to define a function to initialize the screen buttons,
-// because typically you will have multiple different screens, and providing a
-// separate initialization function for each one keeps things cleaner.
-
+```
 // Initialize the main screen.
 void initButtons_MainScreen(void) {
 
@@ -1218,33 +1214,27 @@ void initButtons_MainScreen(void) {
   btn_Hello.initButton(lcd, "TC", 120, 30, 200, 26, ILI9341_BLACK,
     ILI9341_LIGHTGREY, ILI9341_BLUE, "C", "Hello World!", false, &font12);
 
-  // Initialize btn_int8Val. Give it rounded corners, with initial value -5 and range -10 to +10.
+  // Initialize btn_int8Val and its arrow buttons. Give it rounded corners, with initial
+  // value -5 and range -10 to +10.
   btn_int8Val.initButton(lcd, "TL", 35, 68, 50, 26, ILI9341_BLACK, ILI9341_LIGHTGREY,
     ILI9341_RED, "C", &font12, RAD, -5, -10, +10);
-
-  // Initialize arrow buttons for int8val button.
+  btn_int8Val.setValue(NVsettings.int8val);
   btn_int8Val_left.initButton(lcd, 'L', "TR", 120, 65, 30, 30, ILI9341_BLACK, ILI9341_LIGHTGREY);
   btn_int8Val_right.initButton(lcd, 'R', "TL", 130, 65, 30, 30, ILI9341_BLACK, ILI9341_LIGHTGREY);
 
-  // Initialize btn_uint8Val. Give it rounded corners, with initial value 10 and
-  // range 0 to 10, and add a degree symbol after it. Display "--" for 0.
+  // Initialize btn_uint8Val and its arrow buttons. Give it rounded corners, with initial
+  // value 10 and range 0 to 10, and add a degree symbol after it. Display "--" for 0.
   btn_uint8Val.initButton(lcd, "TL", 35, 113, 50, 26, ILI9341_BLACK, ILI9341_LIGHTGREY,
     ILI9341_RED, "C", &font12, RAD, +10, 0, +10, true, "--");
-
-  // Initialize arrow buttons for uint8val button.
+  btn_uint8Val.setValue(NVsettings.uint8val);
   btn_uint8Val_left.initButton(lcd, 'L', "TR", 120, 110, 30, 30, ILI9341_BLACK, ILI9341_LIGHTGREY);
   btn_uint8Val_right.initButton(lcd, 'R', "TL", 130, 110, 30, 30, ILI9341_BLACK, ILI9341_LIGHTGREY);
-
-  // Initialize btn_Calibrate. Give it rounded corners, and use value 10 just for
-  btn_Calibrate.initButton(lcd, "CC", 120, 170, BTN_WIDTH, BTN_HEIGHT, ILI9341_BLACK,
-    ILI9341_PINK, ILI9341_BLACK, "C", "Calibrate", false, &font12, RAD);
 }
+```
 
+Similarly, the main screen drawing code previously included in *setup()* is moved to the new function *drawMainScreen()*:
 
-// It is ALSO convenient to define a function to draw the screen, because
-// typically you will have multiple different screens that you will want to be
-// able to switch between.
-
+```
 // Draw the main screen.
 void drawMainScreen() {
 
@@ -1254,8 +1244,7 @@ void drawMainScreen() {
   // Fill screen with white.
   lcd->fillScreen(ILI9341_WHITE);
 
-  // Draw screen buttons.
-  // Also, register buttons with screenButtons object to handle button taps/releases.
+  // Draw screen buttons and register them with the screenButtons object.
 
   btn_Simple.drawButton();
   screenButtons->registerButton(btn_Simple, btnTap_Simple);
@@ -1265,7 +1254,6 @@ void drawMainScreen() {
 
   btn_int8Val.drawButton();
   screenButtons->registerButton(btn_int8Val, btnTap_int8Val);
-
   btn_int8Val_left.drawButton();
   btn_int8Val_right.drawButton();
   screenButtons->registerButton(btn_int8Val_left, btnTap_int8Val_delta);
@@ -1276,41 +1264,43 @@ void drawMainScreen() {
   btn_uint8Val_right.drawButton();
   screenButtons->registerButton(btn_uint8Val_left, btnTap_uint8Val_delta);
   screenButtons->registerButton(btn_uint8Val_right, btnTap_uint8Val_delta);
-
-  btn_Calibrate.drawButton();
-  screenButtons->registerButton(btn_Calibrate, btnTap_Calibrate);
 }
+```
 
-// It is ALSO convenient to define a function to perform any operations required
-// by the screen, because typically you will have multiple different screens and
-// each will require its own unique processing.
+Gather the code previously included in *loop()* that is specific to the main screen and move it to the new function *loopMainScreen()*. The only such code is the EEPROM writing code, as the other *loop()* code that calls *processTapsAndReleases()* is used for all screens.
 
+```
 // Handle loop() processing for the main screen.
 void loopMainScreen() {
-
-  // Currently the only thing that needs to be done in the main screen is to
-  // save current non-volatile values in non-volatile memory if they have
-  // changed.
 
   // Save current values from btn_int8Val and btn_uint8Val to NVsettings.
   NVsettings.int8val = btn_int8Val.getValue();
   NVsettings.uint8val = btn_uint8Val.getValue();
+
   // Save NVsettings to EEPROM, which only gets written if the settings actually changed.
   writeNonvolatileSettingsIfChanged(NVsettings);
 }
+```
 
-  // Initialize the buttons on each screen.
-  initButtons_MainScreen();
-  initButtons_CalibrationScreen();
+Within *setup()*, screens must be initialized, *currentScreen* must be initialized to the desired the initial screen, and the current screen must be drawn:
 
-  // Draw the main screen.
+```
+  // Initialize the display screens.
+  initScreens();
+
+  // Set the initial screen to be displayed and draw it.
   currentScreen = SCREEN_MAIN;
   drawCurrentScreen();
+```
 
+The final element of the design pattern is to call *loopCurrentScreen()* from the main Arduino *loop()* function:
+
+```
   // Handle loop() processing for the current screen.
   loopCurrentScreen();
+```
 
-}
+## Adding a touchscreen calibration screen
 
 
 // Structure containing non-volatile data to be stored in flash memory (with a
@@ -1327,6 +1317,13 @@ struct nonvolatileSettings {
 
 // A labelled button whose name is "calibrate".
 Button_TT_label btn_Calibrate("calibrate");
+
+  // Initialize btn_Calibrate. Give it rounded corners, and use value 10 just for
+  btn_Calibrate.initButton(lcd, "CC", 120, 170, BTN_WIDTH, BTN_HEIGHT, ILI9341_BLACK,
+    ILI9341_PINK, ILI9341_BLACK, "C", "Calibrate", false, &font12, RAD);
+
+  btn_Calibrate.drawButton();
+  screenButtons->registerButton(btn_Calibrate, btnTap_Calibrate);
 
 // Handle tap of "btn_Calibrate". We switch to the calibration screen.
 void btnTap_Calibrate(Button_TT& btn) {
