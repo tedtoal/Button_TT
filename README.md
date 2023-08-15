@@ -1302,10 +1302,12 @@ The final element of the design pattern is to call *loopCurrentScreen()* from th
 
 ## Adding a touchscreen calibration screen
 
+In this section we add code to implement a touchscreen calibration screen to the design pattern code of the previous section.
 
-// Structure containing non-volatile data to be stored in flash memory (with a
-// copy in regular memory). We use this structure even if we don't have the SAMD
-// architecture support for storing it in EEPROM.
+There are four int16_t values that are part of the *ts_display* touchscreen-display object that provide the calibration for mapping touchscreen coordinates to display coordinates. These values must be made part of the non-volatile settings structure, copying their names and types from *TS_Display.h* to this struct:
+
+```
+// Structure containing non-volatile data to be stored in flash memory.
 struct nonvolatileSettings {
   int8_t int8val;       // btn_int8Val value
   uint8_t uint8val;     // btn_uint8Val value
@@ -1314,43 +1316,92 @@ struct nonvolatileSettings {
   int16_t TS_UL_X;
   int16_t TS_UL_Y;
 };
+```
 
+There must be a way for the user to get to the calibration screen. We add a new *Calibrate* button to the main screen:
+
+```
 // A labelled button whose name is "calibrate".
 Button_TT_label btn_Calibrate("calibrate");
 
-  // Initialize btn_Calibrate. Give it rounded corners, and use value 10 just for
-  btn_Calibrate.initButton(lcd, "CC", 120, 170, BTN_WIDTH, BTN_HEIGHT, ILI9341_BLACK,
-    ILI9341_PINK, ILI9341_BLACK, "C", "Calibrate", false, &font12, RAD);
-
-  btn_Calibrate.drawButton();
-  screenButtons->registerButton(btn_Calibrate, btnTap_Calibrate);
-
-// Handle tap of "btn_Calibrate". We switch to the calibration screen.
+// Handle tap of "btn_Calibrate" by switching to the calibration screen.
 void btnTap_Calibrate(Button_TT& btn) {
   currentScreen = SCREEN_CALIBRATION;
   drawCurrentScreen();
 }
+```
 
+We will add two more constants to the section of constants to be used in *initButton()* calls, to provide a "standard" button size that might be used for many screen buttons:
 
+```
+// Define a "standard" button width and height.
+#define BTN_WIDTH  110
+#define BTN_HEIGHT 40
+```
 
-// CALIBRATION SCREEN buttons and handler functions.
-//
-// The Calibration screen initially shows a Cancel button, a message to touch
-// the "+", and a single "+" in one corner. When Cancel is touched the screen
-// exits back to the main screen without changing the calibration setting. If
-// the "+" is touched, it is erased and a second "+" in the opposite corner is
-// displayed. If that "+" is also touched, it is erased, calibration settings
-// are recomputed and temporarily changed, a Save button is shown along with the
-// Cancel button, a message is displayed to touch anywhere to test calibration,
-// and subsequent touches cause a "+" of another color to be drawn at that
-// position. Touching Cancel reverts to original calibration settings, while
-// touching Save saves the new calibration settings to nonvolatile memory and
-// it exits back to the main screen.
+An *initButton()* call for the new *Calibrate* button is added to *initMainScreen()*:
 
+```
+  // Initialize btn_Calibrate to be a standard-sized button with rounded corners.
+  btn_Calibrate.initButton(lcd, "CC", 120, 170, BTN_WIDTH, BTN_HEIGHT, ILI9341_BLACK,
+    ILI9341_PINK, ILI9341_BLACK, "C", "Calibrate", false, &font12, RAD);
+```
+
+Calls to *drawButton()* and *registerButton()* are added to *drawMainScreen()*:
+
+```
+  btn_Calibrate.drawButton();
+  screenButtons->registerButton(btn_Calibrate, btnTap_Calibrate);
+```
+
+The calibration screen itself will have three buttons:
+
+> 1. A label that says "Calibrate" at the top of the screen (a good design pattern is to put a label at the top of each screen that identifies which screen it is)
+>
+> 2. A "Cancel" button, always visible on this screen
+>
+> 3. A "Save" button, only displayed once user has tapped two screen corners for calibration
+
+The button variable definitions:
+
+```
 Button_TT_label label_Calibration("CalibrationScreen");
 Button_TT_label btn_CalibrationCancel("CalibrationCancel");
 Button_TT_label btn_CalibrationSave("CalibrationSave");
+```
 
+Note that "Calibration" is included as part of the button name, since it is quite possible other screens will have similarly-named buttons.
+
+Some more constants are added to the section of constants to be used when calling *initButton()*:
+
+```
+// Negative button width/height values to use when creating buttons for the LCD
+// display. A negative width or height means that the button is sized for the
+// initial text label supplied for it, with the absolute value of the negative
+// width or height ADDED to the text size to get the full button size.
+#define ZEW 0   // Zero edge width
+#define TEW -1  // Tiny edge width
+#define SEW -5  // Small edge width
+#define MEW -10 // Medium edge width
+#define LEW -20 // Large edge width
+#define HEW -30 // Huge edge width
+
+// Values for expU, expD, expL, expR for button constructors, to expand the
+// touch zone beyond the button outline.
+#define EXP_T 5   // Tiny expansion of button
+#define EXP_S 10  // Small expansion of button
+#define EXP_M 20  // Medium expansion of button
+#define EXP_L 30  // Large expansion of button
+#define EXP_H 50  // Huge expansion of button
+```
+
+The six constants whose name ends with "EW" (edge width) are used to define button sizes. The *initButton()* arguments *w* and *h* can be positive constants giving the button pixel width and height. Alternatively, they can be negative values to signal that the size of the button is to be computed automatically based on the maximum size of the text string that will be displayed within the button. The "EW" constants all have negative values for this purpose. The (absolute value of the) negative value is *added to the automatically computed button width or height. For example, if *w* is set to *SEW* (= -5), then if the button width is computed to be 87 pixels based on the text in the button, then the actual button size will be set to 87 + 5 = 92 pixels. For accurate automatic sizing, it is crucial that for Button_TT_label type buttons you use the largest expected text string as the button label when calling *initButton()*. After *initButton()* returns, the actual label can be changed to the desired initial label by calling *setLabel()*. For integer-value buttons, the maximum text size is computed automatically using the known button *minValue* and *maxValue* settings.
+
+The five constants whose name starts with "EXP_" (expansion) are used with the last four arguments to each *initButton()* function, *expU*, *expD*, *expL*, and *expR*. As described earlier, these allow the actual button size to be increased when the *screenButtons* object tests a touched position to see if it lies within a button. 
+
+The *initCalibrationScreen()* function is defined next. It calls *initButton()* for each of the three buttons:
+
+```
 // Initialize the calibration screen.
 void initButtons_CalibrationScreen(void) {
 
@@ -1361,7 +1412,13 @@ void initButtons_CalibrationScreen(void) {
   btn_CalibrationSave.initButton(lcd, "BR", 235, 313, BTN_WIDTH, BTN_HEIGHT,
     ILI9341_BLACK, ILI9341_PINK, ILI9341_BLACK, "C", "Save", false, &font12, RAD);
 }
+```
 
+Notice that the Calibration button's outline and fill color are set to *TRANSPARENT_COLOR* so the label "Calibrate" will appear on the screen background with no surrounding rectangle. If the text were not fixed it would be necessary to use the screen background color instead of *TRANSPARENT_COLOR*.
+
+Calibration requires that a "+" sign be drawn in two screen corners and then the user must click carefully on them. Here is code to draw the "+" signs:
+
+```
 // Length of each arm of "+" sign.
 #define PLUS_ARM_LEN 10
 
@@ -1370,6 +1427,7 @@ void drawPlus(int16_t x, int16_t y, int16_t color, uint8_t len = PLUS_ARM_LEN) {
   lcd->drawFastVLine(x, y-len, 2*len+1, color);
   lcd->drawFastHLine(x-len, y, 2*len+1, color);
 }
+```
 
 // States during calibration and subsequent showing of tapped points.
 typedef enum _eCalibState {
