@@ -1145,10 +1145,64 @@ typedef enum _eScreen {
 eScreen currentScreen;
 ```
 
+The code is cleaner when a separate function is used to initialize screen. Declare one function for initializing each screen, then define a function that initializes all screens:
 
-// Declare function for drawing the current screen. It is called by button
-// handlers that wish to switch screens.
-void drawCurrentScreen();
+```
+// Declare functions for initializing each screen.
+void initMainScreen(void);
+void initCalibrationScreen(void);
+
+// Initialize all screens.
+void initScreens() {
+  initMainScreen();
+  initCalibrationScreen();
+}
+```
+
+The code is also cleaner when a function is used to draw a screen. Declare one function for drawing each screen, then define a function that draws the current screen:
+
+```
+// Declare functions for drawing each screen.
+void drawMainScreen();
+void drawCalibrationScreen();
+
+// Draw the current screen.
+void drawCurrentScreen() {
+  switch (currentScreen) {
+
+  case SCREEN_MAIN:
+    drawMainScreen();
+    break;
+
+  case SCREEN_CALIBRATION:
+    drawCalibrationScreen();
+    break;
+  }
+}
+```
+
+Finally, the code is cleaner when a function is used to handle a screen's processing tasks when the Arduino *loop()* function is called. Declare one function for handling loop() processing tasks each screen, then define a function that calls the loop() processing function for the current screen:
+
+```
+// Declare functions for handling loop() processing tasks for each screen.
+void loopMainScreen();
+void loopCalibrationScreen();
+
+// Handle loop() processing tasks for the current screen.
+void loopCurrentScreen() {
+  switch (currentScreen) {
+
+  case SCREEN_MAIN:
+    loopMainScreen();
+    break;
+
+  case SCREEN_CALIBRATION:
+    loopCalibrationScreen();
+    break;
+  }
+}
+```
+
 
 // It is convenient to define a function to initialize the screen buttons,
 // because typically you will have multiple different screens, and providing a
@@ -1243,30 +1297,6 @@ void loopMainScreen() {
   NVsettings.uint8val = btn_uint8Val.getValue();
   // Save NVsettings to EEPROM, which only gets written if the settings actually changed.
   writeNonvolatileSettingsIfChanged(NVsettings);
-}
-
-// Draw the current screen.
-void drawCurrentScreen() {
-  switch (currentScreen) {
-  case SCREEN_MAIN:
-    drawMainScreen();
-    break;
-  case SCREEN_CALIBRATION:
-    drawCalibrationScreen();
-    break;
-  }
-}
-
-// Handle loop() processing for the current screen.
-void loopCurrentScreen() {
-  switch (currentScreen) {
-  case SCREEN_MAIN:
-    loopMainScreen();
-    break;
-  case SCREEN_CALIBRATION:
-    loopCalibrationScreen();
-    break;
-  }
 }
 
   // Initialize the buttons on each screen.
