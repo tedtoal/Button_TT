@@ -1055,6 +1055,10 @@ Two functions must be defined, one for reading the settings from EEPROM when the
 ```
 #ifdef ARDUINO_ARCH_SAMD
 
+// Predeclare following function to work around Arduino IDE bug.
+void readNonvolatileSettings(nonvolatileSettings& settings,
+    const nonvolatileSettings& defaults);
+
 // Read non-volatile settings from flash memory into 'settings'.  If flash
 // memory has not yet been initialized, initialize it with 'defaults'.
 void readNonvolatileSettings(nonvolatileSettings& settings, const nonvolatileSettings& defaults) {
@@ -1074,6 +1078,9 @@ void readNonvolatileSettings(nonvolatileSettings& settings, const nonvolatileSet
   // Read settings data from flash-based EEPROM.
   EEPROM.get(storedAddress + sizeof(signature), settings);
 }
+
+// Predeclare following function to work around Arduino IDE bug.
+bool writeNonvolatileSettingsIfChanged(nonvolatileSettings& settings);
 
 // Write 'settings' to flash memory IF IT HAS CHANGED. Return true if it changed
 // and was written, else false.
@@ -1162,7 +1169,7 @@ The code is also cleaner when a function is used to draw a screen. Declare one f
 ```
 // Declare functions for drawing each screen.
 void drawMainScreen();
-void drawCalibrationScreen();
+void drawCalibrationScreen(int state=1);
 
 // Draw the current screen.
 void drawCurrentScreen() {
@@ -1178,6 +1185,8 @@ void drawCurrentScreen() {
   }
 }
 ```
+
+Notice that *drawCalibrationScreen()* has an argument, unlike the typical screen draw function. We use this in a later section because we need to redraw the calibration screen multiple times from different calibration states.
 
 Finally, the code is cleaner when a function is used to handle a screen's processing tasks when the Arduino *loop()* function is called. Declare one function for handling loop() processing tasks each screen, then define a function that calls the loop() processing function for the current screen:
 
@@ -1354,18 +1363,21 @@ Calls to *drawButton()* and *registerButton()* are added to *drawMainScreen()*:
   screenButtons->registerButton(btn_Calibrate, btnTap_Calibrate);
 ```
 
-The calibration screen itself will have three buttons:
+The calibration screen itself will have four buttons:
 
 > 1. A label that says "Calibrate" at the top of the screen (a good design pattern is to put a label at the top of each screen that identifies which screen it is)
 >
-> 2. A "Cancel" button, always visible on this screen
+> 2. A label that says "Tap the +" when a "+" appears in the upper-left or lower-right of the screen, and says "Tap to test calibration" after the user has tapped both of those + signs.
 >
-> 3. A "Save" button, only displayed once user has tapped two screen corners for calibration
+> 3. A "Cancel" button, always visible on this screen
+>
+> 4. A "Save" button, only displayed once user has tapped two screen corners for calibration
 
 The button variable definitions:
 
 ```
 Button_TT_label label_Calibration("CalibrationScreen");
+Button_TT_label label_CalibrationTouch("CalibrationTouch");
 Button_TT_label btn_CalibrationCancel("CalibrationCancel");
 Button_TT_label btn_CalibrationSave("CalibrationSave");
 ```
@@ -1399,7 +1411,7 @@ The six constants whose name ends with "EW" (edge width) are used to define butt
 
 The five constants whose name starts with "EXP_" (expansion) are used with the last four arguments to each *initButton()* function, *expU*, *expD*, *expL*, and *expR*. As described earlier, these allow the actual button size to be increased when the *screenButtons* object tests a touched position to see if it lies within a button. 
 
-The *initCalibrationScreen()* function is defined next. It calls *initButton()* for each of the three buttons:
+The *initCalibrationScreen()* function is defined next. It calls *initButton()* for each of the four buttons:
 
 ```
 // Initialize the calibration screen.
@@ -1407,6 +1419,8 @@ void initButtons_CalibrationScreen(void) {
 
   label_Calibration.initButton(lcd, "TC", 120, 5, TEW, TEW, TRANSPARENT_COLOR,
     TRANSPARENT_COLOR, ILI9341_DARKGREEN, "C", "Calibrate", false, &font12);
+  label_Touch.initButton(lcd, "TL", 10, 30, 220, TEW, TRANSPARENT_COLOR,
+    TRANSPARENT_COLOR, ILI9341_RED, "TL", "Tap the +", false, &font12);
   btn_CalibrationCancel.initButton(lcd, "BL", 5, 313, BTN_WIDTH, BTN_HEIGHT,
     ILI9341_BLACK, ILI9341_PINK, ILI9341_BLACK, "C", "Cancel", false, &font12, RAD);
   btn_CalibrationSave.initButton(lcd, "BR", 235, 313, BTN_WIDTH, BTN_HEIGHT,
@@ -1414,7 +1428,7 @@ void initButtons_CalibrationScreen(void) {
 }
 ```
 
-Notice that the Calibration button's outline and fill color are set to *TRANSPARENT_COLOR* so the label "Calibrate" will appear on the screen background with no surrounding rectangle. If the text were not fixed it would be necessary to use the screen background color instead of *TRANSPARENT_COLOR*.
+Notice that the label_Calibration and label_Touch button outlines and fill colors are set to *TRANSPARENT_COLOR* so the button text will appear on the screen background with no surrounding rectangle. If the text were not fixed and the screen were not being completely redrawn whenever the text was changed, it would be necessary to use the screen background color instead of *TRANSPARENT_COLOR*.
 
 Calibration requires that a "+" sign be drawn in two screen corners and then the user must click carefully on them. Define a function to draw the "+" signs:
 
@@ -1427,24 +1441,6 @@ void drawPlus(int16_t x, int16_t y, int16_t color, uint8_t len = PLUS_ARM_LEN) {
   lcd->drawFastVLine(x, y-len, 2*len+1, color);
   lcd->drawFastHLine(x-len, y, 2*len+1, color);
 }
-```
-
-We will display a string on the display near the "+" sign instructing the user to tap it. Define a function to print a string at a specified position:
-
-```
-// Print string S to display at cursor position (x,y) in specified color.
-void lcd_print(int16_t x, int16_t y, int16_t color, const char* S) {
-  lcd->setCursor(x, y);
-  lcd->setTextColor(color);
-  lcd->print(S);
-}
-```
-
-Define a constant holding the string for instructing user:
-
-```
-// Text for user instructions to tap "+".
-#define TEXT_TAP_PLUS "Tap the +"
 ```
 
 Define tap handlers for the Cancel and Save buttons:
@@ -1475,11 +1471,11 @@ The workhorse of the calibration screen is a state machine operated in function 
 // States during calibration and subsequent showing of tapped points.
 typedef enum _eCalibState {
   STATE_WAIT_UL,            // Wait for user to tap + at upper-left
-  STATE_WAIT_UL_RELEASE,    // Wait for him to release the tap
+  STATE_WAIT_UL_RELEASE,    // Wait for user to release the tap
   STATE_WAIT_LR,            // Wait for user to tap + at lower-right
-  STATE_WAIT_LR_RELEASE,    // Wait for him to release the tap
+  STATE_WAIT_LR_RELEASE,    // Wait for user to release the tap
   STATE_WAIT_POINT_SHOW_IT, // Wait for user to tap anywhere, then draw "+" there
-  STATE_WAIT_RELEASE        // Wait for him to release the tap
+  STATE_WAIT_RELEASE        // Wait for user to release the tap
 } eCalibState;
 
 // Current state of calibration screen interaction with user.
@@ -1495,12 +1491,15 @@ int16_t x_UL, y_UL, x_LR, y_LR;
 int16_t TSx_UL, TSy_UL, TSx_LR, TSy_LR;
 ```
 
-The *drawCalibrationScreen()* function is now defined. Unlike our previous screen draw functions, this one has an argument, *drawSaveButton*, that defaults to false. We call the function with the argument set true after the user taps the second "+" sign:
+The *drawCalibrationScreen()* function is now defined. Unlike our previous screen draw functions, this one has an argument, *state*, that defaults to 1. The function is called from the "Calibrate" button handler of the main screen using the default argument value of 1, which draws the initial calibration screen including the first "+" to be tapped, and sets *calibState* to the initial value of *STATE_WAIT_UL*. Then, it is called two more times, once after the user taps the first "+", to redraw the calibration screen including the second "+", and then again to redraw it with no "+" and drawing the *Save* button for the first time. The *state* argument also changes the label and position of the *CalibrateTouch* button.
 
 ```
 // Draw the Calibration screen and register its buttons with the screenButtons
-// object. Save button is only drawn if drawSaveButton=true.
-void drawCalibrationScreen(bool drawSaveButton=false) {
+// object. Argument "state" defaults to 1 and is either 1, 2, or 3:
+//      1: initial display, draw first +, "tap +", no Save, set STATE_WAIT_UL
+//      2: finished STATE_WAIT_UL_RELEASE, draw second +, "tap +", no Save
+//      3: finished STATE_WAIT_LR_RELEASE, draw no +, draw Save, "tap to test"
+void drawCalibrationScreen(int state) {
 
   // Clear all existing button registrations.
   screenButtons->clear();
@@ -1508,25 +1507,51 @@ void drawCalibrationScreen(bool drawSaveButton=false) {
   // Fill screen with white.
   lcd->fillScreen(ILI9341_WHITE);
 
-  // Draw and register screen buttons.
-  label_Calibration.drawButton();
-  btn_CalibrationCancel.drawButton();
-  screenButtons->registerButton(btn_CalibrationCancel, btnTap_CalibrationCancel);
-  if (drawSaveButton) {
-    btn_CalibrationSave.drawButton();
-    screenButtons->registerButton(btn_CalibrationSave, btnTap_CalibrationSave);
-  }
-
   // Get position of the two corner display points at which to draw "+" signs
   // to be tapped.
   ts_display->GetCalibration_UL_LR(PLUS_ARM_LEN+2, &x_UL, &y_UL, &x_LR, &y_LR);
 
-  // Draw first "+" and set state to wait for user to tap that point.
-  drawPlus(x_UL, y_UL, ILI9341_BLUE);
-  lcd_print(20, 60, ILI9341_RED, TEXT_TAP_PLUS);
-  calibState = STATE_WAIT_UL;
+  // Draw and register screen buttons.
+  label_Calibration.drawButton();
+
+  label_Touch.setLabel(state == 3 ? "Tap to test calibration" : "Tap the +");
+  int16_t xL, yT;
+  if (state == 1) {
+    xL = x_UL;
+    yT = y_UL + 2*PLUS_ARM_LEN;
+  } else if (state == 2) {
+    xL = btn_CalibrationSave.getLeft();
+    yT = y_LR - 2*PLUS_ARM_LEN - label_Touch.getHeight();
+  } else if (state == 3) {
+    xL = (lcd->width() - label_Touch.getWidth())/2;
+    yT = (lcd->height() - label_Touch.getHeight())/2;
+  }
+  label_Touch.setPosition(xL, yT);
+  label_Touch.drawButton();
+
+  btn_CalibrationCancel.drawButton();
+  screenButtons->registerButton(btn_CalibrationCancel, btnTap_CalibrationCancel);
+
+  if (state == 3) {
+    btn_CalibrationSave.drawButton();
+    screenButtons->registerButton(btn_CalibrationSave, btnTap_CalibrationSave);
+  }
+
+  // Draw first or second + or none
+  if (state == 1)
+    drawPlus(x_UL, y_UL, ILI9341_BLUE);
+  else if (state == 2)
+    drawPlus(x_LR, y_LR, ILI9341_BLUE);
+
+  // When state = 1, we must initialize calibState because this happens when
+  // user taps "Calibrate" button in main screen, and we need to restart the
+  // calibration state machine.
+  if (state == 1)
+    calibState = STATE_WAIT_UL;
 }
 ```
+
+Besides the twist of adding an argument to *drawCalibrationScreen()* so the function can be used to redraw the screen multiple times during calibration, there are a couple other new features. The *label_Touch* button label varies depending on the *state* argument, and the button is moved around on the screen by calling its *setPosition()* function. The position depends on the value of the *state* argument. To compute the position, the *getLeft()*, *getWidth()*, and *getHeight()* functions are used to get the left-side x-coordinate and width and height of a button. *getTop()* is also available to get the top-side y-coordinate. The left side of the *Save* button is used as a convenient reasonable place to put the "Tap the +" label when the "+" is in the lower-right corner. The *drawPlus()* function is also used, illustrating how a screen drawing function is not limited to drawing buttons!
 
 The final function to define for the Calibration screen is *loopCalibrationScreen()*, which runs the state engine. This function tests for touchscreen touches independently of and in parallel with *processTapsAndReleases()*. This uses the previously-defined *playSound()* function to play a sound when the "+" is touched.
 
@@ -1555,14 +1580,10 @@ void loopCalibrationScreen() {
 
   case STATE_WAIT_UL_RELEASE:
     if (!isTouched) {
-      // Erase the first plus and instructions.
-      drawPlus(x_UL, y_UL, ILI9341_WHITE);
-      lcd_print(20, 60, ILI9341_WHITE, TEXT_TAP_PLUS);
-      // Paint second + and wait for user to tap that point.
-      drawPlus(x_LR, y_LR, ILI9341_BLUE);
-      lcd_print(120, 260, ILI9341_RED, TEXT_TAP_PLUS);
       // Stop sound.
       playSound(false);
+      // Redraw the screen with second +.
+      drawCalibrationScreen(2);
       calibState = STATE_WAIT_LR;
     }
     break;
@@ -1580,6 +1601,8 @@ void loopCalibrationScreen() {
 
   case STATE_WAIT_LR_RELEASE:
     if (!isTouched) {
+      // Stop sound.
+      playSound(false);
       // Map the two touchscreen points to the correct calibration values at the
       // extreme ends of the display. Set resulting calibration parameters as the
       // new calibration parameters in ts_display.
@@ -1587,11 +1610,8 @@ void loopCalibrationScreen() {
       ts_display->findTS_calibration(x_UL, y_UL, x_LR, y_LR, TSx_UL, TSy_UL, TSx_LR, TSy_LR,
         &TS_LR_X, &TS_LR_Y, &TS_UL_X, &TS_UL_Y);
       ts_display->setTS_calibration(TS_LR_X, TS_LR_Y, TS_UL_X, TS_UL_Y);
-      // Redraw the screen with "Save" button and show new instructions.
-      drawCalibrationScreen(true);
-      lcd_print(10, 200, ILI9341_RED, "Tap to test calibration");
-      // Stop sound.
-      playSound(false);
+      // Redraw the screen with no +.
+      drawCalibrationScreen(3);
       calibState = STATE_WAIT_POINT_SHOW_IT;
     }
     break;
