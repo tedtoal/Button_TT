@@ -1743,8 +1743,8 @@ void Button_TT_plus::drawButton(bool inverted) {
     y = _yT + _h/2;
     l = 2*_armLen+1;
     t = _armWidth/2;
-    _gfx->drawRect(x-t, y-_armLen, _armWidth, l, _plusColor);
-    _gfx->drawRect(x-_armLen, y-t, l, _armWidth, _plusColor);
+    _gfx->fillRect(x-t, y-_armLen, _armWidth, l, _plusColor);
+    _gfx->fillRect(x-_armLen, y-t, l, _armWidth, _plusColor);
   }
   _changedSinceLastDrawn = false;
 }
