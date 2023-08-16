@@ -1465,7 +1465,9 @@ void btnTap_CalibrationSave(Button_TT& btn) {
 }
 ```
 
-The workhorse of the calibration screen is a state machine operated in function *loopCalibrationScreen()* that waits for the user to tap on each "+" sign. After he taps them in opposing corners of the display, the calibration parameters are computed and become the new parameters for translating screen taps to display coordinates. The user can then tap the screen further to test the new calibration, with a "+" sign drawn at each tapped position. If satisfied he can tap "Save" to save the new calibration or "Cancel" to revert back to the previous one. This state machine code is taken from *TS_DisplayCalibrate.ino* in the *XPT_2046_Touchscreen_TT* library. Define an enum of the states and a variable that holds the current state:
+The workhorse of the calibration screen is a state machine operated in function *loopCalibrationScreen()* that waits for the user to tap on each "+" sign. After he taps them in opposing corners of the display, the calibration parameters are computed and become the new parameters for translating screen taps to display coordinates. The user can then tap the screen further to test the new calibration, with a "+" sign drawn at each tapped position. If satisfied he can tap "Save" to save the new calibration or "Cancel" to revert back to the previous one. This state machine code is taken from *TS_DisplayCalibrate.ino* in the *XPT_2046_Touchscreen_TT* library, the main difference being that here we implement the "Tap the +" message using a label button rather than writing screen text directly.
+
+Define an enum of the states and a variable that holds the current state:
 
 ```
 // States during calibration and subsequent showing of tapped points.
@@ -1649,7 +1651,91 @@ How is a button *used* within the program? Some buttons perform actions immediat
 
 When buttons are initialized, they must be set to their initial values. Rather than coding a fixed value in the *initButton()* call, the value might instead come from a variable, such as for example the *NVsettings* variable used in a section above to illustrate use of EEPROM to store program settings. Another method is to initialize the button to a fixed value (such as for example its longest possible string, if the button is being auto-sized), and after *initButton()* returns, call *setLabel()* to set the actual desired initial label, or call *setValue()* to set the desired initial value of integer-valued buttons.
 
-## Creating new button styles with your own button classes
+## Creating new button styles: a button class with a "+" in it
+
+You may find that you need button functionality that is not part of the *Button_TT* library. Because the buttons are implemented as C++ classes, you can fairly easily extend the functionality by deriving a new class from an existing button class and adding new functions. The possibilities are endless. We will illustrate one possibility.
+
+The *Button_TT* class is the base class for all buttons. There are two classes that derive from it. First is *Button_TT_label*, which implements buttons with labels. The integer-valued buttons derive from that class, since the integer value becomes a text label for the button. Second is *Button_TT_arrow*, which implements triangular buttons with no labels. If you wish to create a new button class, one good starting point is to  copy either *Button_TT_uint8.h/.cpp* (to make a labelled button class) or *Button_TT_arrow.h/.cpp* (to make an unlabelled button type) to new file names and edit them, removing the code specific to that class and adding new code for your new button class.
+
+In this example, we will create a button class that draws a "+" in the middle of the button. It can be used to replace the manual drawing of the "+" sign in the calibrate code shown previously. There is no strong need for this class, but it provides a convenient way to illustrate how to create a button that draws itself differently. Here is the code, deriving the new class from *Button_TT*:
+
+```
+// A new class for a square button containing a "+" in the middle. The width and
+// height of the button are equal (w). If the "+" arm length is 0, 90% of w/2 is
+// used.
+class Button_TT_plus : public Button_TT {
+
+protected:
+  uint8_t _armLen;      // Length of plus arm.
+  uint16_t _plusColor;  // Color of plus.
+
+public:
+
+  Button_TT_plus(const char* name, Adafruit_GFX* gfx = 0,
+      const char* align = "C", int16_t x = 0, int16_t y = 0, uint16_t w = 0,
+      uint8_t armLen = 0, uint16_t plusColor = 0, uint16_t outlineColor = 0,
+      uint16_t fillColor = 0, uint8_t expU = 0, uint8_t expD = 0,
+      uint8_t expL = 0, uint8_t expR = 0) : Button_TT(name) {
+    initButton(gfx, align, x, y, w, armLen, plusColor, outlineColor, fillColor,
+      expU, expD, expL, expR);
+  }
+
+  void initButton(Adafruit_GFX* gfx = 0, const char* align = "C", int16_t x = 0,
+      int16_t y = 0, uint16_t w = 0, uint8_t armLen = 0, uint16_t plusColor = 0,
+      uint16_t outlineColor = 0, uint16_t fillColor = 0, uint8_t expU = 0,
+      uint8_t expD = 0, uint8_t expL = 0, uint8_t expR = 0);
+
+  uint8_t getArmLen(void) { return (_armLen); }
+  bool setArmLen(uint8_t armLen);
+  uint16_t getPlusColor(void) { return (_plusColor); }
+  bool setPlusColor(uint8_t plusColor);
+  using Button_TT::drawButton;
+  virtual void drawButton(bool inverted) override;
+};
+
+void Button_TT_plus::initButton(Adafruit_GFX* gfx, const char* align,
+    int16_t x, int16_t y, uint16_t w, uint8_t armLen, uint16_t plusColor,
+    uint16_t outlineColor, uint16_t fillColor, uint8_t expU, uint8_t expD,
+    uint8_t expL, uint8_t expR) {
+
+  _armLen = (armLen > 0) ? armLen : (uint8_t)(9*w/10);
+  _plusColor = plusColor;
+  Button_TT::initButton(gfx, align, x, y, w, w, outlineColor, fillColor, expU,
+    expD, expL, expR);
+}
+
+bool Button_TT_plus::setArmLen(uint8_t armLen) {
+  if (_armLen != armLen) {
+    _armLen = armLen;
+    _changedSinceLastDrawn = true;
+    return (true);
+  }
+  return (false);
+}
+
+bool Button_TT_plus::setPlusColor(uint8_t plusColor) {
+  if (_plusColor != plusColor) {
+    _plusColor = plusColor;
+    _changedSinceLastDrawn = true;
+    return (true);
+  }
+  return (false);
+}
+
+void Button_TT_plus::drawButton(bool inverted) {
+  Button_TT::drawButton(inverted);
+  if (_plusColor != TRANSPARENT_COLOR) {
+    int16_t x, y;
+    x = _xL + _w/2;
+    y = _yT + _h/2;
+    _gfx->drawFastVLine(x, y-_armLen, 2*_armLen+1, _plusColor);
+    _gfx->drawFastHLine(x-_armLen, y, 2*_armLen+1, _plusColor);
+  }
+  _changedSinceLastDrawn = false;
+}
+```
+
+It is left as an exercise to change the touchscreen calibration code presented above to use this new style of button instead of drawing the "+" with draw function calls.
 
 ## Contact
 
