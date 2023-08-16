@@ -798,7 +798,7 @@ The *Button_TT* library includes another pair of files, *Button_TT_arrow.h/.cpp*
 #include <Button_TT_arrow.h>
 ```
 
-Then, a variable is defined for each arrow button. They are usually defined in pairs, one for increment and one for decrement, and coding clarity is improved by naming the button variables the same as the name of the button they will increment or decrement, with an appendix indicating which one it is. Each button can be oriented so that its tip lies in any of the four directions up, down, left, or right. It works well to place a button pair side-by-side, the left one with the tip to the left and the right with tip to right. This helps conserve limited screen space. The left-facing button would decrement the value and the right-facing button would increment the value:
+Then, a variable is defined for each arrow button. They are usually defined in pairs, one for increment and one for decrement, and coding clarity is improved by naming the button variables the same as the name of the button they will increment or decrement, with a suffix indicating which one it is. Each button can be oriented so that its tip lies in any of the four directions up, down, left, or right. It works well to place a button pair side-by-side, the left one with the tip to the left and the right with tip to right. This helps conserve limited screen space. The left-facing button would decrement the value and the right-facing button would increment the value:
 
 ```
 // Define two arrow buttons (left and right, for decrement and increment) to go with btn_int8Val.
@@ -811,13 +811,13 @@ void btnTap_int8Val_delta(Button_TT& btn) {
 }
 ```
 
-The *Button_TT_int8* function *valueIncDec()* handles all the work of incrementing or decrementing the button value, honoring its minValue and maxValue settings by doing nothing once the limit is reached. It even determines which of the two registered buttons for the function was the actual button that was tapped, by comparing the *btn* argument to the two button variables. The *amount* that the function adds to or subtracts from the button value is given by the first argument to the function, 1 above.
+The *Button_TT_int8* function *valueIncDec()* handles all the work of incrementing or decrementing the button value, determining which of the two registered buttons for the function was the actual button that was tapped by comparing the *btn* argument to the two button variables. It increments or decrements the button value depending on which button was tapped, and it honors the minValue and maxValue settings by doing nothing once the limit is reached. The *amount* that the function adds to or subtracts from the button value is given by the first argument to the function, 1 above.
 
 The *initButton()* function for arrow buttons has the same arguments as the basic *Button_TT* button style, with the addition of one argument *(orient)* just after the first argument and two arguments after the x and y arguments:
 
 ```
 orient  Orientation of triangle: U=UP, D=DOWN, L=LEFT, R=RIGHT.
-s1      Length of the base of the equilateral triangle.
+s1      Length of the base of the isosceles triangle.
 s2      Length of the other two triangle sides.
 ```
 
@@ -838,7 +838,7 @@ The buttons are drawn just after the *drawButton()* call for the associated *btn
   btn_int8Val_right.drawButton();
 ```
 
-And they are registered just after the *registerButton()* call for the associated *btn_int8Val* button:
+And they are registered just after that:
 
 ```
   screenButtons->registerButton(btn_int8Val_left, btnTap_int8Val_delta);
@@ -847,11 +847,11 @@ And they are registered just after the *registerButton()* call for the associate
 
 With the above code, a pair of arrow buttons is implemented that will respectively decrement and increment the btn_int8Val value.
 
-## Using a button with a signed integer value
+## Using a button with an unsigned integer value
 
-The previous sections illustrated use of an signed integer button. Here the code is shown for using an unsigned integer button, of class *Button_TT_uint8*, with a pair of arrow buttons for increment and decrement. There are minor differences worthy of noting.
+The previous sections illustrated use of a signed integer button. Here code is shown for using an unsigned integer button, of class *Button_TT_uint8*, with a pair of arrow buttons for increment and decrement. There are a couple minor differences.
 
-Start as usual by including the header file and define the button variables and tap function:
+Start as usual by including the header file and defining the button variables and tap function:
 
 ```
 // Include file for using button with uint8_t value.
@@ -862,7 +862,7 @@ Start as usual by including the header file and define the button variables and 
 // its value when one of the arrow buttons to its right is tapped.
 Button_TT_uint8 btn_uint8Val("uint8Val");
 
-// Define two arrow buttons (left/right, for decrement/increment)  to go with btn_uint8Val.
+// Define two arrow buttons (left/right, for decrement/increment) to go with btn_uint8Val.
 Button_TT_arrow btn_uint8Val_left("uint8Val_left");
 Button_TT_arrow btn_uint8Val_right("uint8Val_right");
 
@@ -887,9 +887,9 @@ Call *initButton()* to initialize each button:
   btn_uint8Val_right.initButton(lcd, 'R', "TL", 130, 110, 30, 30, ILI9341_BLACK, ILI9341_LIGHTGREY);
 ```
 
-Above we see that "--" is used for the value of the *zeroString* argument, to show that string instead of "0" for the value 0. The *degreeSym* argument is true, which causes a small superscript circle to be displayed after the number, indicating *degrees*. This feature obviates the need for devising a font that contains a degree symbol.
+Above we see that "--" is used for the value of the *zeroString* argument, to show that string instead of "0" for the value 0. The *degreeSym* argument is true, which causes a small superscript circle to be automatically displayed after the number, indicating *degrees*. This feature obviates the need for devising a font that contains a degree symbol.
 
-The *drawButton()* function is called for each function to draw it:
+The *drawButton()* function is called to draw each button:
 
 ```
   btn_uint8Val.drawButton();
@@ -897,7 +897,7 @@ The *drawButton()* function is called for each function to draw it:
   btn_uint8Val_right.drawButton();
 ```
 
-Finally, the *screenButtons* *registerButton()* function is called for each arrow button to make it tappable:
+Finally, the *screenButtons* *registerButton()* function is called to register each arrow button to make it tappable:
 
 ```
   screenButtons->registerButton(btn_uint8Val_left, btnTap_uint8Val_delta);
@@ -1003,9 +1003,9 @@ void processTapsAndReleases() {
 
 ## Storing settings in non-volatile memory
 
-Another often-desired feature of a system is to store system settings in some form of non-volatile memory, so they aren't reset system power is lost. Again, although support for that feature is not specifically part of the *Button_TT* library, it can easily be implemented within the framework already presented above.
+Another often-desired feature of a system is to store settings in some form of non-volatile memory, so they aren't reset when system power is lost. Again, although support for that feature is not specifically part of the *Button_TT* library, it can easily be implemented within the framework already presented above.
 
-The Arduino microprocessor being used has EEPROM memory, which is non-volatile memory that stores the program. In at least some microprocessor architectures, this memory is available for use by the running program, in addition to its basic use for storing the program itself. This is true in the SAMD architecture, and the *FlashStorage_SAMD* library provides this support. Here (and in the *Buttons.ino* example program), that library is used to store program settings in EEPROM. If you use a microprocessor with a different architecture, you will need to investigate whether a similar library is available for it, and make the necessary changes to this example.
+The Arduino microprocessor, whatever its type, has EEPROM memory, which is non-volatile memory that stores the program. In at least some microprocessor architectures, this memory is available for use by the running program, in addition to its basic use for storing the program itself. This is true in the SAMD architecture, and the *FlashStorage_SAMD* library provides this support. Here (and in the *Buttons.ino* example program), that library is used to store program settings in EEPROM. If you use a microprocessor with a different architecture, you will need to investigate whether a similar library is available for it, and make the necessary changes to this example.
 
 The *FlashStorage_SAMD* library requires that two constants be defined, *EEPROM_EMULATION_SIZE* and *FLASH_DEBUG*, before including the library's main header file:
 
@@ -1114,7 +1114,7 @@ bool writeNonvolatileSettingsIfChanged(nonvolatileSettings& settings) {
 #endif
 ```
 
-During initialization, typically within the *setup()* function, the last settings stored in EEPROM are read to initialize the *NVsettings* variable:
+During initialization, typically within the *setup()* function, the settings last stored in EEPROM are read to initialize the *NVsettings* variable:
 
 ```
   // Read non-volatile settings from flash memory (EEPROM) into NVsettings, or
@@ -1124,7 +1124,9 @@ During initialization, typically within the *setup()* function, the last setting
   readNonvolatileSettings(NVsettings, defaults);
 ```
 
-Later during initialization, *NVsettings* may be used to initialize other variables, as needed. Here we use  it to initialize the two integer button values:
+The above note is an important point to remember. Downloading your program into your microprocessor with the Arduino IDE wipes out any previously saved EEPROM data, so each time you start up with a fresh program download, expect that the EEPROM values will have been re-initialized.
+
+Later during initialization, *NVsettings* may be used to initialize other variables, as needed. Here in *setup()* we use it to initialize the two integer button values:
 
 ```
   // Initialize integer button values.
@@ -1132,7 +1134,11 @@ Later during initialization, *NVsettings* may be used to initialize other variab
   btn_uint8Val.setValue(NVsettings.uint8val);
 ```
 
-When the settings values change, they must be stored again in EEPROM. The function *writeNonvolatileSettingsIfChanged()* defined above was made to only write settings if they have changed. This avoids time-consuming and potentially EEPROM-wearing writes when no change occurs, and it allows one to call that function often, even if no settings change is likely, without causing harm. One way to do this is to call the function *every time the Arduino standard *loop()* function is called.* Sometimes the setting value *only resides in NVsettings*, but in other cases, such as our integer buttons here, the settings reside elsewhere (in the buttons themselves) and must be copied to NVsettings. Here is the code that would be used in *loop()* to copy and save non-volatile settings when they change:
+When the settings values change, they must be stored again in EEPROM. The function *writeNonvolatileSettingsIfChanged()* defined above was made to only write settings if they have changed. This avoids time-consuming and potentially EEPROM-wearing writes when no change occurs, and it allows one to call that function often, even if no settings change is likely, without causing harm. One way to do this is to call the function *every time the Arduino standard *loop()* function is called.*
+
+Sometimes the setting value *only resides in NVsettings*, but in other cases, such as our integer buttons here, the settings reside elsewhere (in the buttons themselves) and must be copied to NVsettings.
+
+Here is the code that would be used in *loop()* to both copy current values into *NVsettings* and to save current non-volatile settings from *NVsettings* to *EEPROM* when the settings have changed:
 
 ```
   // Save current values from btn_int8Val and btn_uint8Val to NVsettings.
@@ -1148,11 +1154,11 @@ To see the effect of this code, the system must be RESET after changing settings
 
 ## Adding more screens
 
-Most systems with a display have more than one screen layout that are displayed at different times. Some code reorganization is needed to support this. In this section a design pattern is presented to help organize multiple screens. Although this is not part of the *Button_TT* library, the pattern fits well within the *Button_TT* code already presented.
+Most systems with a display have more than one screen layout that are displayed at different times. Some code reorganization is needed to support this. In this section a design pattern is presented to help organize multiple screens. Although this is not part of the *Button_TT* library, the pattern fits well with the *Button_TT* code already presented.
 
-A second screen is added here in addition to the one already defined above (referred to as the *main screen*). The second screen will be a touchscreen *calibration screen*, based on the *TS_DisplayCalibrate.ino* example program in the *XPT2046_Touchscreen_TT* library. In this section, the elements of the multi-screen design pattern are presented, with the changes needed to the previously presented code above. The next section will show the code necessary to actually implement the calibration screen.
+In addition to the screen already defined above (referred to as the *main screen*), a second screen will be added below, a touchscreen *calibration screen*. In this section, the elements of the multi-screen design pattern are presented, with the changes needed to the previously presented code above. The following section will show the code needed to implement the calibration screen.
 
-To begin, define an enum that enumerates the different screens your system will have, and define a variable of that enum type, which holds the currently displayed screen number:
+First, define an enum that enumerates the different screens your system will have, and define a variable of that enum type to identify the currently displayed screen:
 
 ```
 // Display screens.
@@ -1478,6 +1484,18 @@ void btnTap_CalibrationSave(Button_TT& btn) {
   currentScreen = SCREEN_MAIN;
   drawMainScreen();
 }
+```
+
+DONT FORGET
+
+```
+#if SELECT >= 9
+  // Make 'defaults' hold the default non-volatile settings when the settings
+  // are first initialized. Here, we load it with the initial calibration
+  // settings from ts_display.
+  ts_display->getTS_calibration(&defaults.TS_LR_X, &defaults.TS_LR_Y, &defaults.TS_UL_X,
+    &defaults.TS_UL_Y);
+  #endif
 ```
 
 The workhorse of the calibration screen is a state machine operated in function *loopCalibrationScreen()* that waits for the user to tap on each "+" sign. After he taps them in opposing corners of the display, the calibration parameters are computed and become the new parameters for translating screen taps to display coordinates. The user can then tap the screen further to test the new calibration, with a "+" sign drawn at each tapped position. If satisfied he can tap "Save" to save the new calibration or "Cancel" to revert back to the previous one. This state machine code is taken from *TS_DisplayCalibrate.ino* in the *XPT_2046_Touchscreen_TT* library, the main difference being that here we implement the "Tap the +" message using a label button rather than writing screen text directly.
