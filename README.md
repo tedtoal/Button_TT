@@ -75,7 +75,7 @@ A more complete example is provided in the example program *HelloWorld.ino*, whi
 
 ## Quick start with Button.ino
 
-If you'd prefer to skip the rest of this document and just quickly get started, the example program *Button.ino* shows fairly thorough use of the *Button_TT* library (although additional details are given in the sections below). That program is set up so that a **#define of *SELECT*** near the top of the file selects which features of the program are enabled. Start with *#define SELECT 0* and work up to *#define SELECT 9* to gradually add more and more features:
+If you'd prefer to skip the rest of this document and just quickly get started, the example program *Button.ino* shows fairly thorough use of the *Button_TT* library (although additional details are given in the sections below). That program is set up so that a **#define of *SELECT*** near the top of the file selects which features of the program are enabled. Start with *#define SELECT 0* and work up to *#define SELECT 10* to gradually add more and more features:
 > 0 :  Just a rectangular button with no text and no response to a tap.
 >
 > 1 :  Respond to tap of button by changing its fill color.
@@ -95,6 +95,8 @@ If you'd prefer to skip the rest of this document and just quickly get started, 
 > 8 :  Add non-volatile memory storage of numeric button values if SAMD architecture.
 >
 > 9 :  Add touchscreen calibration, storing it non-volatilely if SAMD architecture.
+>
+> 10 : Add a new button class for a square button that displays a "+" in it.
 
 The following sections introduce the Button_TT library functionality one piece at a time.
 
