@@ -34,8 +34,8 @@ Adafruit_ILI9341* lcd;
 // The button name can be anything and is unrelated to text on a button (It is
 // useful at times for debugging).
 
-// A plain button with no text, whose name is "simple".
-Button_TT btn_Simple("simple");
+// A plain button with no text, whose name is "Simple".
+Button_TT btn_Simple("Simple");
 
 // Standard Arduino setup() function.
 void setup() {
@@ -160,11 +160,11 @@ To create a button on the LCD display, you must define a variable that represent
 Later, design patterns will be presented for keeping your buttons organized, but for now, just know that you can define a variable for a simple button like this:
 
 ```
-// A plain button with no text, whose name is "simple".
-Button_TT btn_Simple("simple");
+// A plain button with no text, whose name is "Simple".
+Button_TT btn_Simple("Simple");
 ```
 
-Take note of the button name, *simple*, which is given as the argument to the button constructor. This can be any name you want (including an empty string). It is *not* shown as text inside the button. Instead, this name is used to display information about the button if you need to debug problems with the Button_TT library or its use. You may never need to use it, but it is advisable to define each of your buttons with a *unique name*.
+Take note of the button name, *Simple*, which is given as the argument to the button constructor. This can be any name you want (including an empty string). It is *not* shown as text inside the button. Instead, this name is used to display information about the button if you need to debug problems with the Button_TT library or its use. You may never need to use it, but it is advisable to define each of your buttons with a *unique name*.
 
 A useful design pattern is to name the button variable in the format *btn_<Name>* as is done above.
 
@@ -439,8 +439,8 @@ Font_TT font12(&FreeSans12pt7b);
 Two create a labelled button, define a variable of type *Button_TT_label*:
 
 ```
-// A labelled button whose name is "hello".
-Button_TT_label btn_Hello("hello");
+// A labelled button whose name is "Hello".
+Button_TT_label btn_Hello("Hello");
 ```
 
 As with the simple button shown earlier, each labelled button must be initialized by calling the *initButton()* function from setup() (or from some other function called by setup()):
@@ -897,7 +897,7 @@ The first step is to define a constant that gives the number of milliseconds aft
 
 ```
 // Number of milliseconds after last screen touch before backlight is turned off.
-#define LCD_BACKLIGHT_AUTO_OFF_MS (10*1000)
+#define LCD_BACKLIGHT_AUTO_OFF_MS (15*1000)
 ```
 
 Here two variables are used for timing the backlight. One counts milliseconds since last screen touching activity, and the other is used to record the actual millisecond time (from the Arduino *millis()* function) at which the first variable was last updated. Although a single variable would work, instead two are used to simplify dealing with overflow of the millis() count. Define these variables near the top of the .ino file, they are global to the whole file:
@@ -1330,8 +1330,8 @@ struct nonvolatileSettings {
 There must be a way for the user to get to the calibration screen. We add a new *Calibrate* button to the main screen:
 
 ```
-// A labelled button whose name is "calibrate".
-Button_TT_label btn_Calibrate("calibrate");
+// A labelled button whose name is "Calibrate".
+Button_TT_label btn_Calibrate("Calibrate");
 
 // Handle tap of "btn_Calibrate" by switching to the calibration screen.
 void btnTap_Calibrate(Button_TT& btn) {
@@ -1352,7 +1352,7 @@ An *initButton()* call for the new *Calibrate* button is added to *initMainScree
 
 ```
   // Initialize btn_Calibrate to be a standard-sized button with rounded corners.
-  btn_Calibrate.initButton(lcd, "CC", 120, 170, BTN_WIDTH, BTN_HEIGHT, ILI9341_BLACK,
+  btn_Calibrate.initButton(lcd, "CC", 120, 230, BTN_WIDTH, BTN_HEIGHT, ILI9341_BLACK,
     ILI9341_PINK, ILI9341_BLACK, "C", "Calibrate", false, &font12, RAD);
 ```
 
@@ -1662,31 +1662,34 @@ In this example, we will create a button class that draws a "+" in the middle of
 ```
 // A new class for a square button containing a "+" in the middle. The width and
 // height of the button are equal (w). If the "+" arm length is 0, 90% of w/2 is
-// used.
+// used for length. If the "+" arm width is 0, 10% of w/2 is used for width.
 class Button_TT_plus : public Button_TT {
 
 protected:
-  uint8_t _armLen;      // Length of plus arm.
+  uint8_t _armLen;      // Length of each plus arm.
+  uint8_t _armWidth;    // Width (thickness) of each plus arm.
   uint16_t _plusColor;  // Color of plus.
 
 public:
 
   Button_TT_plus(const char* name, Adafruit_GFX* gfx = 0,
       const char* align = "C", int16_t x = 0, int16_t y = 0, uint16_t w = 0,
-      uint8_t armLen = 0, uint16_t plusColor = 0, uint16_t outlineColor = 0,
-      uint16_t fillColor = 0, uint8_t expU = 0, uint8_t expD = 0,
-      uint8_t expL = 0, uint8_t expR = 0) : Button_TT(name) {
-    initButton(gfx, align, x, y, w, armLen, plusColor, outlineColor, fillColor,
-      expU, expD, expL, expR);
+      uint8_t armLen = 0, uint8_t armWidth = 0, uint16_t plusColor = 0,
+      uint16_t outlineColor = 0, uint16_t fillColor = 0, uint8_t expU = 0,
+      uint8_t expD = 0, uint8_t expL = 0, uint8_t expR = 0) : Button_TT(name) {
+    initButton(gfx, align, x, y, w, armLen, armWidth, plusColor,
+      outlineColor, fillColor, expU, expD, expL, expR);
   }
 
   void initButton(Adafruit_GFX* gfx = 0, const char* align = "C", int16_t x = 0,
-      int16_t y = 0, uint16_t w = 0, uint8_t armLen = 0, uint16_t plusColor = 0,
-      uint16_t outlineColor = 0, uint16_t fillColor = 0, uint8_t expU = 0,
-      uint8_t expD = 0, uint8_t expL = 0, uint8_t expR = 0);
+      int16_t y = 0, uint16_t w = 0, uint8_t armLen = 0, uint8_t armWidth = 0,
+      uint16_t plusColor = 0, uint16_t outlineColor = 0, uint16_t fillColor = 0,
+      uint8_t expU = 0, uint8_t expD = 0, uint8_t expL = 0, uint8_t expR = 0);
 
   uint8_t getArmLen(void) { return (_armLen); }
   bool setArmLen(uint8_t armLen);
+  uint8_t getArmWidth(void) { return (_armWidth); }
+  bool setArmWidth(uint8_t armWidth);
   uint16_t getPlusColor(void) { return (_plusColor); }
   bool setPlusColor(uint8_t plusColor);
   using Button_TT::drawButton;
@@ -1694,11 +1697,12 @@ public:
 };
 
 void Button_TT_plus::initButton(Adafruit_GFX* gfx, const char* align,
-    int16_t x, int16_t y, uint16_t w, uint8_t armLen, uint16_t plusColor,
-    uint16_t outlineColor, uint16_t fillColor, uint8_t expU, uint8_t expD,
-    uint8_t expL, uint8_t expR) {
+    int16_t x, int16_t y, uint16_t w, uint8_t armLen, uint8_t armWidth,
+    uint16_t plusColor, uint16_t outlineColor, uint16_t fillColor, uint8_t expU,
+    uint8_t expD, uint8_t expL, uint8_t expR) {
 
-  _armLen = (armLen > 0) ? armLen : (uint8_t)(9*w/10);
+  _armLen = (armLen > 0) ? armLen : (uint8_t)(1+9*w/2/10);
+  _armWidth = (armWidth > 0) ? armWidth : (uint8_t)(1+w/2/10);
   _plusColor = plusColor;
   Button_TT::initButton(gfx, align, x, y, w, w, outlineColor, fillColor, expU,
     expD, expL, expR);
@@ -1707,6 +1711,15 @@ void Button_TT_plus::initButton(Adafruit_GFX* gfx, const char* align,
 bool Button_TT_plus::setArmLen(uint8_t armLen) {
   if (_armLen != armLen) {
     _armLen = armLen;
+    _changedSinceLastDrawn = true;
+    return (true);
+  }
+  return (false);
+}
+
+bool Button_TT_plus::setArmLen(uint8_t armWidth) {
+  if (_armWidth != armWidth) {
+    _armWidth = armWidth;
     _changedSinceLastDrawn = true;
     return (true);
   }
@@ -1725,17 +1738,19 @@ bool Button_TT_plus::setPlusColor(uint8_t plusColor) {
 void Button_TT_plus::drawButton(bool inverted) {
   Button_TT::drawButton(inverted);
   if (_plusColor != TRANSPARENT_COLOR) {
-    int16_t x, y;
+    int16_t x, y, l, t;
     x = _xL + _w/2;
     y = _yT + _h/2;
-    _gfx->drawFastVLine(x, y-_armLen, 2*_armLen+1, _plusColor);
-    _gfx->drawFastHLine(x-_armLen, y, 2*_armLen+1, _plusColor);
+    l = 2*_armLen+1;
+    t = _armWidth/2;
+    _gfx->drawRect(x-t, y-_armLen, _armWidth, l, _plusColor);
+    _gfx->drawRect(x-_armLen, y-t, l, _armWidth, _plusColor);
   }
   _changedSinceLastDrawn = false;
 }
 ```
 
-It is left as an exercise to change the touchscreen calibration code presented above to use this new style of button instead of drawing the "+" with draw function calls.
+It is left as an exercise to change the touchscreen calibration code presented above to use this new style of button, perhaps in place of drawing the "+" with draw function calls.
 
 ## Contact
 
