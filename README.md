@@ -466,6 +466,8 @@ As with the simple button shown earlier, each labelled button must be initialize
 
 This button is being aligned against the top edge (T) of the specified position (120,30) and horizontally centered (C{ at that point. The button size is 200 pixels wide by 26 pixels tall, it has a black outline and a light grey interior.
 
+Setting the appropriate values for the *initButton()* parameters in all the various buttons of a project is a tedious job. In particular, getting the button positions and sizes right to produce a pleasing screen layout is very difficult. Professional software development environments typically have *layout manager* software available at run time or design time to make the layout job easier. For Arduino, we keep it simple, and insist that the programmer go through the tedious work of setting parameter values, running the code to test the appearance, making adjustments to values, running again, etc. Your code should be set up in a way that makes it easy to enable a particular screen at startup, which you would do when adjusting the layout of that screen. A later section shows how to handle multiple screens in a clean manner and set up for drawing a particular screen at startup.
+
 There is a different *initButton()* function for each different type of button (for each different button class), and each one has its own unique arguments. Therefore, you should load the *Button_TT_label.h* file into the Arduino IDE and locate and inspect the *initButton()* comments and default arguments. Typically, new types of buttons are based on simpler buttons, and the *initButton()* function has most of the same arguments as the simpler button did, with additional arguments added. The arguments that are the same are *not necessarily in the same order or position*. Usually, the first 8 arguments are the same as the first 8 of *Button_TT::initButton()*, and the last four are the same as the last four of that function, with new arguments appearing after the first 8. Also, sometimes arguments may acquire new or modified meaning, so pay close attention to the argument comments. In the case of *Button_TT_label*, the *w* and *h* (width and height) arguments acquire an additional meaning:
 
 ```
@@ -514,9 +516,9 @@ Often, though, one wants to use a button for more than just a label, allowing th
 
 ## Adding touchscreen support and detection of button taps
 
-The *Button_TT* library provides support to make detection of button taps and responses to them easier to code. For this, the library requires that your touchscreen uses an XPT2046 controller, which is common on low-cost touchscreens. The touchscreen must be controllable using the library *XPT2046_Touchscreen_TT*, which is an enhanced version of the *XPT2046_Touchscreen* library. As long as that latter library works with your touchscreen, you can install the *XPT2046_Touchscreen_TT* library to provide button tap support. Example programs in that library allow you to test that it works correctly by itself and with your display.
+The *Button_TT* library provides support to make detection of and response to button taps easier to code. For this, the library requires that your touchscreen uses an XPT2046 controller, which is common on low-cost touchscreens. The touchscreen must be controllable using the library *XPT2046_Touchscreen_TT*, which is an enhanced version of the *XPT2046_Touchscreen* library. As long as the *XPT2046_Touchscreen* library works with your touchscreen, you can install the *XPT2046_Touchscreen_TT* library to provide button tap support. Example programs in that library allow you to test that it works correctly by itself and with your display.
 
-The *XPT2046_Touchscreen_TT* library has two pairs of files supporting the touchscreen. Files *XPT2046_Touchscreen_TT.h/.cpp* define class XPT2046_Touchscreen_TT that talks to the XPT2046 controller and has functions to test for taps and get their positions. Files *TS_Display.h/.cpp* define class TS_Display that provides several services for working with a combination of a touchscreen and a display, such as mapping touchscreen coordinates to display coordinates. To use the touchscreen with the *Button_TT* library, include both of those header files near the top of your .ino file:
+The *XPT2046_Touchscreen_TT* library has two pairs of files supporting the touchscreen. Files *XPT2046_Touchscreen_TT.h/.cpp* define class XPT2046_Touchscreen_TT that talks to the XPT2046 controller and has functions to test for taps and get their positions. Files *TS_Display.h/.cpp* define class TS_Display that provides several services for working with a combination of a touchscreen and a display, such as mapping touchscreen coordinates to display coordinates. To use the touchscreen with the *Button_TT* library, start by including both of the header files near the top of your .ino file:
 
 ```
 // Include files to use touchscreen with display.
@@ -524,10 +526,10 @@ The *XPT2046_Touchscreen_TT* library has two pairs of files supporting the touch
 #include <TS_Display.h>
 ```
 
-The file pair *Button_TT_collection.h/.cpp* in the *Button_TT* library defines a class *Button_TT_collection* whose purpose is to maintain a set of buttons that are currently displayed on the screen and can be tapped to initiate some action. Your code must have one instance of the class, and as tappable buttons are created, they must be registered with that instance, including a function to be called if the button is tapped. If the display is changed, for example by displaying a different screen with different buttons, the registered buttons must be cleared from the instance and then the buttons for the new screen must be registered with it. To use the touchscreen with the *Button_TT* library, include that header file:
+The file pair *Button_TT_collection.h/.cpp* in the *Button_TT* library defines a class *Button_TT_collection* which manages a set of tappable buttons that are currently displayed on the screen. You must create one instance of the class and register tappable buttons with it, with a function to be called if the button is tapped. When a new screen is displayed with different buttons, the registered buttons must be cleared and the buttons for the new screen registered. To use this class, start by including the header file:
 
 ```
-// Include when button tap response is required.
+// Include to manage tappable buttons.
 #include <Button_TT_collection.h>
 ```
 
@@ -541,7 +543,7 @@ The touchscreen requires two signals from the microcomputer to access it, and th
 
 The above are examples, change the values to match the pins connected to the touchscreen on your system.
 
-When the *XPT2046_Touchscreen_TT* library is used, a variable must be defined that will point to an instance of the *XPT2046_Touchscreen_TT* class. It is used to interact with the touchscreen, and if the touchscreen is used with a display, a second variable must be defined that points to an instance of the *TS_Display* class:
+Three variables must be defined that point to object instances. The first points to an *XPT2046_Touchscreen_TT* object and is used to interact with the touchscreen. The second variable points to a *TS_Display* object and is used for mapping between touchscreen and display coordinates. The third points to a *Button_TT_collection* object and used to register buttons to be monitored for taps. Declare these pointer variables near the top of your .ino file before function definitions start:
 
 ```
 // Touchscreen object.
@@ -549,16 +551,12 @@ XPT2046_Touchscreen* touch;
 
 // Touchscreen-display object.
 TS_Display* ts_display;
-```
 
-A third variable must be defined that will point to an instance of the *Button_TT_collection* class, used to register buttons to be monitored for taps:
-
-```
 // Button collection object to manage taps of buttons.
 Button_TT_collection* screenButtons;
 ```
 
-All three of the above pointer variables must be initialized, which involves allocating and assigning an object instance to them, followed by one or more calls to member functions to perform required initialization. It is during the *touch* object initialization that the touchscreen pin numbers defined earlier are used. *Typically this is all done within the standard Arduino **setup()** function, **after** initializing the display object:*
+All three variables must be initialized, which involves allocating and assigning an object instance to them, followed by one or more calls to member functions to perform required initialization. It is during the *touch* object initialization that the touchscreen pin numbers defined earlier are used. *Typically this is all done within the standard Arduino **setup()** function, **after** initializing the display object*. For example:
 
 ```
   // Create and initialize touchscreen object, same rotation as lcd.
@@ -570,12 +568,12 @@ All three of the above pointer variables must be initialized, which involves all
   ts_display = new(TS_Display);
   ts_display->begin(touch, lcd);
 
-  // Initialize button collection object.
+  // Create and initialize button collection object.
   screenButtons = new Button_TT_collection;
   screenButtons->clear();
 ```
 
-A function must be defined for each button that must respond to a tap, and it must perform the desired action. Although in general each tappable button needs such a function, in some cases it makes sense to use the same function for multiple buttons, and this will be shown later. In our example case here, we have already defined two buttons that we want to respond to taps, the *Simple* and *Hello* buttons. We will make a tap of the Simple button toggle its fill color between two colors, and a tap of the Hello button will toggle its text label between two labels:
+A function must be defined for each button that must respond to a tap, to perform the desired action and then redraw the button if the action changed it. Although in general each tappable button has its own tap function, in some cases it makes sense to use the same function for multiple buttons, and this will be shown later. In this example we have already defined two buttons that we want to respond to taps, the *Simple* and *Hello* buttons. Let's make a tap of the *Simple* button toggle its fill between two colors, and a tap of the *Hello* button toggle its text between two labels:
 
 ```
 // Handle tap of "btn_Simple". Toggle button fill color and draw the button.
@@ -594,9 +592,9 @@ void btnTap_Hello(Button_TT& btn) {
 }
 ```
 
-The above functions make use of the basic button functions *getFillColor()*, *setFillColor()*, *getLabel()*, and *setLabel()*, and they both call the *drawButton()* function to redraw the button on the screen, since its appearance has been changed.
+The above functions make use of the button functions *getFillColor()*, *setFillColor()*, *getLabel()*, and *setLabel()*, and they both call the *drawButton()* function to redraw the button on the screen, since its appearance has been changed.
 
-The button tap functions must be associated with their actual button variables by registering each one with the *screenButtons* object. This may be done during initialization, either directly within *setup()* or in a function called by it. However, often there will be several different screens that are displayed at different times depending on user activity, and each time a new screen is displayed, its buttons must be re-registered. The complexities introduced by using multiple screens will be introduced later. Here, we will assume that the registration of buttons is done within *setup()*:
+The button tap functions must be associated with their actual button variables by registering each one with the *screenButtons* object. This may be done during initialization, either directly within *setup()* or in a function called by it. Note that often there will be several different screens that are displayed at different times depending on user activity, and each time a new screen is displayed, its buttons must be re-registered. This implies that screen-drawing functions should be defined. This and other complexities introduced by using multiple screens will be introduced later. Here, we will assume that the registration of buttons is done within *setup()*:
   
 ```
   // Register buttons with screenButtons object to handle button taps/releases.
@@ -604,7 +602,7 @@ The button tap functions must be associated with their actual button variables b
   screenButtons->registerButton(btn_Hello, btnTap_Hello);
 ```
 
-The last thing to do to support button taps is to define another function that checks for touchscreen taps. It is called from the standard Arduino loop() function. It uses the *ts_display* instance to test for a touchscreen tap, and the *screenButtons* instance to find the button that was tapped and call its tap function to perform the desired button action:
+The last thing to do to support button taps is to define a function that checks for touchscreen taps. It is called from the standard Arduino loop() function. It uses the *ts_display* instance to test for a touchscreen tap, and the *screenButtons* instance to find the button that was tapped and call its tap function to perform the desired button action:
 
 ```
 // Check for touch screen tap or release and use ScreenButtons to process it.
@@ -629,7 +627,7 @@ void processTapsAndReleases() {
 }
 ```
 
-The logic of the *processTapsAndReleases()* function is straightforward. The call to the *ts_display* object's *getTouchEvent()* function tests to see if the touchscreen has been tapped (or a tap has been released), and if so, returns the (x,y) display coordinates of the tap. The *press()* function is called to test each registered button to see if it was the one that was tapped, and it does that by calling the *contains()* function of each registered button, passing it the coordinates (x,y) of the tapped point. The button *contains()* function (defined in the base *Button_TT* class and therefore available for all types of buttons) tests to see if (x,y) lies within the interior of the button boundary rectangle, returning *true* if so. A *true* return causes *press()* to call the registered button's tap function, such as *btnTap_Simple()*.
+The logic of the *processTapsAndReleases()* function is straightforward. The call to the *ts_display* object's *getTouchEvent()* function tests to see if the touchscreen has been tapped (or a tap has been released), and if so, returns the (x,y) display coordinates of the tap. The *screenButtons* object's *press()* function is called to test each registered button to see if it was the one that was tapped, and it does that by calling the *contains()* function of each registered button, passing it the coordinates (x,y) of the tapped point. The button *contains()* function (defined in the base *Button_TT* class and therefore available for all types of buttons) tests to see if (x,y) lies within the interior of the button boundary rectangle, returning *true* if so. A *true* return causes *press()* to call the registered button's tap function (such as *btnTap_Simple()*).
 
 The body of the *processTapsAndReleases()* function could instead be placed directly within the Arduino *loop()* function, but it is cleaner to define it as a separate function and call it from *loop():*
 
@@ -644,7 +642,7 @@ void loop() {
 
 ## Playing a beep sound when button is tapped
 
-Usually it is desirable to provide some audible user feedback when he taps a button. Here (and in the *Button.ino* example program) we use the *SAMD_PWM* library, which requires the SAMD microprocessor architecture, to produce the sound. You can adapt this code to use your preferred sound library. The *SAMD_PWM* library defines class *SAMD_PWM*, which talks to the sound hardware to produce sounds. To use the library, you must include its header file, define the hardware pin that is attached to the sound device (BEEPER_PIN), define constants that determine the particular sound to be produced when a button is tapped, and define a pointer to a *SAMD_PWM* object:
+Usually it is desirable to provide some audible feedback when the user taps a button. Here (and in the *Button.ino* example program) we use the *SAMD_PWM* library, which requires that your microprocessor use the SAMD architecture, to produce the sound. (If you have a different architecture, you will have to adapt this code to use your preferred sound library). The *SAMD_PWM* library defines class *SAMD_PWM*, which talks to the sound hardware to produce sounds. To use the library, you must include its header file, define the hardware pin that is attached to the sound device (BEEPER_PIN), define constants that determine the particular sound to be produced when a button is tapped, and define a pointer to a *SAMD_PWM* object:
 
 ```
 // Include file for SAMD beeper tones (requires SAMD architecture).
@@ -667,14 +665,14 @@ SAMD_PWM* sound;
 #endif
 ```
 
-The SAMD_PWM object must be initialized, usually within the *setup()* function. This is where the sound device pin number is used, and there may also be a need for sound constants, such as TS_TONE_FREQ here:
+The SAMD_PWM object must be created and assigned to the *sound* pointer, usually within the *setup()* function. This is where the sound device pin number is used, and there may also be a need for sound constants, such as TS_TONE_FREQ here:
 
 ```
-  // Initialize PWM object for sound from beeper (requires SAMD architecture).
+  // Create PWM object for sound from beeper (requires SAMD architecture).
   sound = new SAMD_PWM(BEEPER_PIN, TS_TONE_FREQ, 0);
 ```
 
-To create a sound when a button is pressed, a function must be defined that will start or stop a sound when a button is pressed or released. Here, for clarity, we define one function to start or stop a sound, and a second one, called the *master button tap/release function*, that is called when a button is pressed or released, and it calls the first function to start or stop the sound:
+To create a sound when a button is pressed, a function must be defined that will start or stop a sound when a button is pressed or released. Here, for clarity, we define one function to start or stop a sound, and a second one, called the *master button tap/release function*, that is called when a button is pressed or released and it calls the first function to start or stop the sound:
 
 ```
 // Play (true) or stop playing (false) a sound.
@@ -688,7 +686,7 @@ void buttonTapRelease(bool tap) {
 }
 ```
 
-Finally, the last thing to do is to register the master button tap/release function with the *screenButton* object, which will call the function as buttons are pressed and released. This is usually done within *setup():*
+Finally, the last thing to do is to register the master button tap/release function with the *screenButton* object so that it will call the function as buttons are pressed and released. This is usually done within *setup():*
 
 ```
   // Register master tap/release function to turn tone on/off at screen taps.
@@ -699,7 +697,7 @@ That is all that is necessary to implement audible button press/release feedback
 
 ## Using buttons showing integer values as labels
 
-Often there is a need to show integer values that the user is able to alter. The *Button_TT* library supports this with four classes, each derived from class *Button_TT_label*, one class for each of four different types of integers: signed and unsigned, 8-bit and 16-bit. The classes are:
+Often there is a need to show number values that the user is able to alter. The *Button_TT* library supports this with four classes, each derived from class *Button_TT_label*, one class for each of four different types of numeric values: signed and unsigned 8-bit and 16-bit integers. The classes are:
 
 > Button_TT_uint8: unsigned 8-bit integer
 >
@@ -709,9 +707,9 @@ Often there is a need to show integer values that the user is able to alter. The
 > 
 > Button_TT_int16: signed 16-bit integer
 
-All four classes are used the same way. They example here uses the *Button_TT_int8* class.
+All four classes are used the same way. The example here uses the *Button_TT_int8* class.
 
-Typically these are used as non-tappable buttons. That is, they are only buttons in the sense that they create numeric text strings on the display. They might not even show the number in a rectangle, but rather, as a number directly on the screen background (by setting the button outline and fill colors equal to the screen background color). There is nothing that prevents making them tappable, and perhaps a program might do that and have a tap call up a keypad where the user could enter a new value. However, the simplest implementation is to use these as non-tappable buttons, and add a pair of *arrow* buttons next to each integer-valued button. The arrow buttons can be tapped to increment and decrement the number. This section only shows how to create the integer-valued button. The next section will show how to create and use arrow buttons.
+Typically these are used as non-tappable buttons. That is, they are only buttons in the sense that they create numeric text strings on the display. They might not even show the number in a rectangle, but rather, as a number directly on the screen background (by setting the button outline and fill colors equal to the screen background color). There is nothing that prevents making them tappable. For example, a program might have a tap call up a keypad where the user could enter a new value. However, the simplest implementation is to use these as non-tappable buttons and then add a pair of *arrow* buttons next to each "integer" button. The arrow buttons can be tapped to increment and decrement the number. This section only shows how to create an "integer" button. The next section will show how to create and use arrow buttons to change the integer button values.
 
 As with other button styles, the first step is to include the header file for the button style:
 
@@ -727,7 +725,7 @@ Then, define a variable of the desired button class, giving it a unique button n
 Button_TT_int8 btn_int8Val("int8Val");
 ```
 
-The button variable is then initialized by calling its *initButton()* function. Again, the *initButton()* function comments and default argument values should first be examined in the *Button_TT_int8.h* file. The additional arguments for this style of button, starting after the button rectangle corner radius argument *rCorner*, are:
+The button variable is then initialized by calling its *initButton()* function. Again, the *initButton()* function comments and default argument values should first be examined in the *Button_TT_int8.h* file. The new arguments for this style of button, starting after the button rectangle corner radius argument *rCorner* that we saw previously, are:
 
 ```
 value         The int8_t value for the button, used to create the label string for the button.
@@ -739,7 +737,7 @@ checkValue    If not nullptr, a pointer to a function that checks a new button
               value and can return an adjusted value if it is out of range.
 ```
 
-There are often many buttons defined in a program, and often many of the *initButton()* argument values are the same for many buttons. It is therefore useful to define, in a section near the start of the .ino file, constants for the common *initButton()* argument values. For example, if rounded buttons are used but they always have the same corner radius, the following definition would be helpful for improving program clarity. Note the short name, to keep *initButton()* call statements shorter, since they tend to be long anyway:
+There are usually a lot of buttons defined in a program, and often many of the *initButton()* argument values are *the same* for many of them. It is therefore useful to define, in a section near the start of the .ino file, constants for the common *initButton()* argument values. For example, if rounded buttons are used but they always have the same corner radius, the following definition would be helpful for improving program clarity. Note the short name, to keep *initButton()* call statements shorter, since they tend to be annoyingly long:
 
 ```
 // Useful constants for initializing buttons. These can be used as arguments to
@@ -783,7 +781,7 @@ void btnTap_int8Val(Button_TT& btn) {
 
 The button tap function uses the *Button_TT_int8* class functions *getValue()*, *getMinValue()*, *getMaxValue()*, and *setValueAndDrawIfChanged()*.
 
-The button tap function must of course be registered with the *screenButtons* object, perhaps from *setup():*
+The tap function must of course be registered with the *screenButtons* object, perhaps from *setup():*
 
 ```
 screenButtons->registerButton(btn_int8Val, btnTap_int8Val);
@@ -793,7 +791,7 @@ Thus, making a button tappable, once the basic tap code shown earlier is in plac
 
 ## Using triangular arrow buttons for increment/decrement
 
-The *Button_TT* library includes another pair of files, *Button_TT_arrow.h/.cpp* that define class *Button_TT_arrow*, which implements another button style, triangular-shaped buttons. These are *unlabelled* buttons. The intended use of them is as *increment* and *decrement* buttons for changing numeric values. As usual, the first step to use this style of buttons is to include the header file:
+The *Button_TT* library includes another pair of files, *Button_TT_arrow.h/.cpp* that define class *Button_TT_arrow*, which implements another button style: *unlabelled* triangular-shaped buttons. Their intended use is as *increment* and *decrement* buttons for changing numeric values. As usual, the first step to use this style of buttons is to include the header file:
 
 ```
 // Include file for using triangle buttons, usually used as arrow buttons.
