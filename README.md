@@ -7,8 +7,8 @@ The ***Button_TT*** library defines classes and functions for drawing buttons on
 -------------------------
 ### Table of Contents
 
-[Required additional libraries](https://github.com/tedtoal/Button_TT/edit/main/README.md#required-additional-libraries)
-[Introductory code without touchscreen](https://github.com/tedtoal/Button_TT/edit/main/README.md#introductory-code-without-touchscreen)
+* [Required additional libraries](https://github.com/tedtoal/Button_TT/edit/main/README.md#required-additional-libraries)
+* [Introductory code without touchscreen](https://github.com/tedtoal/Button_TT/edit/main/README.md#introductory-code-without-touchscreen)
 
 -------------------------
 
