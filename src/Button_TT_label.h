@@ -255,8 +255,8 @@ public:
                             label.
     @param    f             Pointer to Font_TT object for the custom font to use
                             for the label, nullptr for built-in font.
-    @param    rCorner       Radius of rounded corners of button outline
-                            rectangle, 0 for straight corners.
+    @param    rCorner       Radius in pixels of rounded corners of the button
+                            outline rectangle, 0 for straight corners.
     @param    expU    See Button_TT::initButton()
     @param    expD    See Button_TT::initButton()
     @param    expL    See Button_TT::initButton()
@@ -308,11 +308,10 @@ public:
   /*!
     @brief    Get current button label font object.
     @returns  The current font object for the button label.
-    @note     If the built-in font is in use, the returned Font_TT object will
-              have a GFXfont member that is nullptr.
+    @note     If the built-in font is in use, nullptr is returned.
   */
   /**************************************************************************/
-  const Font_TT* getFont(void) { return (_f); }
+  const Font_TT* getFont(void) { return (_f == &builtInFont ? nullptr : _f); }
 
   /**************************************************************************/
   /*!

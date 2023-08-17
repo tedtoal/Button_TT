@@ -67,9 +67,6 @@ protected:
   // Orientation of triangle: U=UP, D=DOWN, L=LEFT, R=RIGHT.
   char _orient;
 
-  // Triangle vertices, 0=tip, CW for 1 and 2.
-  int16_t _x0, _y0, _x1, _y1, _x2,  _y2;
-
   // Lengths of triangle sides, base side is _s1, lateral sides are _s2.
   uint16_t _s1, _s2;
 
@@ -101,9 +98,8 @@ public:
     @param    align   See Button_TT_label::initButton()
     @param    x       See Button_TT_label::initButton()
     @param    y       See Button_TT_label::initButton()
-    @param    s1      Length of the triangle that is opposite vertex at end of
-                      arrow.
-    @param    s2      Length of other two triangle sides.
+    @param    s1      Length of the base of the isosceles triangle.
+    @param    s2      Length of the other two triangle sides.
     @param    outlineColor See Button_TT::initButton()
     @param    fillColor    See Button_TT::initButton()
     @param    expU    See Button_TT::initButton()

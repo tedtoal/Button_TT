@@ -87,6 +87,18 @@ void Button_TT::initButton(Adafruit_GFX* gfx, const char* align, int16_t x,
 
 /**************************************************************************/
 
+bool Button_TT::setPosition(int16_t xL, int16_t yT) {
+  if (_xL != xL || _yT != yT) {
+    _xL = xL;
+    _yT = yT;
+    _changedSinceLastDrawn = true;
+    return (true);
+  }
+  return (false);
+}
+
+/**************************************************************************/
+
 bool Button_TT::setOutlineColor(uint16_t outlineColor) {
   if (_outlineColor != outlineColor) {
     _outlineColor = outlineColor;

@@ -247,21 +247,54 @@ void Font_TT::newTextBoundsAndOffset(int16_t dX, int16_t dY, uint16_t wt,
 }
 
 /**************************************************************************/
-void Font_TT::getTextAlignCursor(int16_t xL, int16_t yT, uint16_t w, uint16_t h,
-    int16_t dX, int16_t dY, uint16_t wt, uint16_t ht, char alignH, char alignV,
-    int16_t &xC, int16_t &yC) {
+void Font_TT::getTextAlignCursor(int16_t dX, int16_t dY, uint16_t wt,
+    uint16_t ht, int16_t xL, int16_t yT, uint16_t w, uint16_t h, char alignH,
+    char alignV, int16_t &xC, int16_t &yC) {
 
-  xC = xL - dX;
+  xC = xL - dX; // Left-aligned
   if (alignH == 'R')
-    xC += w - wt;
+    xC += w - wt; // Shift right to be right-aligned
   else if (alignH == 'C')
-    xC += w/2 - wt/2;
+    xC += w/2 - wt/2; // Shift right partially to be center-aligned
 
-  yC = yT - dY;
-  if (alignV == 'T')
-    yC += h - ht;
+  yC = yT - dY; // Top-aligned
+  if (alignV == 'B')
+    yC += h - ht; // Shift down to be bottom-aligned
   else if (alignV == 'C')
-    yC += h/2 - ht/2;
+    yC += h/2 - ht/2; // Shift down partially to be middle-aligned
+}
+
+/**************************************************************************/
+void Font_TT::getTextAlignCursor(const char* str, int16_t xL, int16_t yT,
+    uint16_t w, uint16_t h, char alignH, char alignV, int16_t &xC,
+    int16_t &yC) {
+
+  int16_t dX, dY, dXcF;
+  uint16_t wt, ht;
+  getTextBoundsAndOffset(str, dX, dY, wt, ht, dXcF);
+  getTextAlignCursor(dX, dY, wt, ht, xL, yT, w, h, alignH, alignV, xC, yC);
+}
+
+/**********************************************************************/
+void Font_TT::getTextAlignCursor(const String &str, int16_t xL, int16_t yT,
+    uint16_t w, uint16_t h, char alignH, char alignV, int16_t &xC,
+    int16_t &yC) {
+
+  int16_t dX, dY, dXcF;
+  uint16_t wt, ht;
+  getTextBoundsAndOffset(str, dX, dY, wt, ht, dXcF);
+  getTextAlignCursor(dX, dY, wt, ht, xL, yT, w, h, alignH, alignV, xC, yC);
+}
+
+/**********************************************************************/
+void Font_TT::getTextAlignCursor(const __FlashStringHelper* str, int16_t xL,
+    int16_t yT, uint16_t w, uint16_t h, char alignH, char alignV, int16_t &xC,
+    int16_t &yC) {
+
+  int16_t dX, dY, dXcF;
+  uint16_t wt, ht;
+  getTextBoundsAndOffset(str, dX, dY, wt, ht, dXcF);
+  getTextAlignCursor(dX, dY, wt, ht, xL, yT, w, h, alignH, alignV, xC, yC);
 }
 
 // -------------------------------------------------------------------------

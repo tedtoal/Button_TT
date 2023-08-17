@@ -158,6 +158,48 @@ public:
 
   /**************************************************************************/
   /*!
+    @brief    Get button rectangle left side coordinate.
+    @returns  Button rectangle left boundary x-coordinate.
+  */
+  /**************************************************************************/
+  uint16_t getLeft() { return(_xL); }
+
+  /**************************************************************************/
+  /*!
+    @brief    Get button rectangle top side coordinate.
+    @returns  Button rectangle top boundary y-coordinate.
+  */
+  /**************************************************************************/
+  uint16_t getTop() { return(_yT); }
+
+  /**************************************************************************/
+  /*!
+    @brief    Set button boundary rectangle top-left corner position.
+    @param    xL    The new left boundary x-coordinate.
+    @param    yT    The new top boundary y-coordinate.
+    @returns  true if new position is different from old.
+  */
+  /**************************************************************************/
+  bool setPosition(int16_t xL, int16_t yT);
+
+  /**************************************************************************/
+  /*!
+    @brief    Get button width.
+    @returns  Button boundary rectangle width in pixels.
+  */
+  /**************************************************************************/
+  uint16_t getWidth() { return (_w); }
+
+  /**************************************************************************/
+  /*!
+    @brief    Get button height.
+    @returns  Button boundary rectangle height in pixels.
+  */
+  /**************************************************************************/
+  uint16_t getHeight() { return (_h); }
+
+  /**************************************************************************/
+  /*!
     @brief    Get current outline color for button.
     @returns  The current outline color.
   */

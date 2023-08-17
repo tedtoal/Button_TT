@@ -92,29 +92,6 @@ void Button_TT_arrow::initButton(Adafruit_GFX* gfx, char orient,
   else
     yT = y - h / 2 + 1;
 
-  // Compute coords of vertices using orient, xL, yT, w, and h.
-  _x0 = _x1 = _x2 = xL;
-  _y0 = _y1 = _y2 = yT;
-  if (orient == 'U') {
-    _x0 += w / 2;
-    _x1 += w;
-    _y1 += h;
-    _y2 += h;
-  } else if (orient == 'D') {
-    _x0 += w / 2;
-    _y0 += h;
-    _x2 += w;
-  } else if (orient == 'L') {
-    _y0 += h / 2;
-    _x1 += w;
-    _x2 += w;
-    _y2 += h;
-  } else { // Assume 'R'
-    _x0 += w;
-    _y0 += h / 2;
-    _y1 += h;
-  }
-
   // Invoke base class initialize function to finish initialization.
   Button_TT::initButton(gfx, "TL", xL, yT, w, h, outlineColor, fillColor, expU,
     expD, expL, expR);
@@ -129,10 +106,36 @@ void Button_TT_arrow::drawButton(bool inverted) {
 
   _inverted = inverted;
 
+  // Triangle vertices, 0=tip, CW for 1 and 2.
+  int16_t x0, y0, x1, y1, x2,  y2;
+
+  // Compute coords of vertices using orient, _xL, _yT, _w, and _h.
+  x0 = x1 = x2 = _xL;
+  y0 = y1 = y2 = _yT;
+  if (_orient == 'U') {
+    x0 += _w / 2;
+    x1 += _w;
+    y1 += _h;
+    y2 += _h;
+  } else if (_orient == 'D') {
+    x0 += _w / 2;
+    y0 += _h;
+    x2 += _w;
+  } else if (_orient == 'L') {
+    y0 += _h / 2;
+    x1 += _w;
+    x2 += _w;
+    y2 += _h;
+  } else { // Assume 'R'
+    x0 += _w;
+    y0 += _h / 2;
+    y1 += _h;
+  }
+
   #if BUTTON_TT_DBG
   monitor.printf(
     "Draw arrow:  Name: %s  x0: %d  y0: %d  x1: %d  y1: %d  x2: %d  y2: %d\n",
-    _x0, _y0, _x1, _y1, _x2, _y2);
+    x0, y0, x1, y1, x2, y2);
   #endif
 
   uint16_t fill, outline;
@@ -145,9 +148,9 @@ void Button_TT_arrow::drawButton(bool inverted) {
   }
 
   if (fill != TRANSPARENT_COLOR)
-    _gfx->fillTriangle(_x0, _y0, _x1, _y1, _x2, _y2, fill);
+    _gfx->fillTriangle(x0, y0, x1, y1, x2, y2, fill);
   if (outline != TRANSPARENT_COLOR)
-    _gfx->drawTriangle(_x0, _y0, _x1, _y1, _x2, _y2, outline);
+    _gfx->drawTriangle(x0, y0, x1, y1, x2, y2, outline);
 
   _changedSinceLastDrawn = false;
 }

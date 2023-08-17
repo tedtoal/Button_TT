@@ -85,14 +85,14 @@ public:
       uint16_t outlineColor = 0, uint16_t fillColor = 0, uint16_t textColor = 0,
       const char *textAlign = "C", Font_TT* f = nullptr, int16_t rCorner = 0,
       uint16_t value = 0, uint16_t minValue = 0, uint16_t maxValue = 0,
-      const char *zeroString = nullptr, bool degreeSym = false,
+      bool degreeSym = false, const char *zeroString = nullptr,
       uint16_t (*checkValue)(Button_TT_uint16 &btn, uint16_t value) = nullptr,
       uint8_t expU = 0, uint8_t expD = 0, uint8_t expL = 0, uint8_t expR = 0)
       : Button_TT_label(name) {
 
     initButton(gfx, align, x, y, w, h, outlineColor, fillColor, textColor,
-               textAlign, f, rCorner, value, minValue, maxValue, zeroString,
-               degreeSym, checkValue, expU, expD, expL, expR);
+               textAlign, f, rCorner, value, minValue, maxValue, degreeSym,
+               zeroString, checkValue, expU, expD, expL, expR);
   }
 
   /**************************************************************************/
@@ -114,10 +114,10 @@ public:
                             the label string for the button.
     @param   minValue       The minimum allowed value for value.
     @param   maxValue       The maximum allowed value for value.
-    @param   zeroString     If not nullptr, this points to a character string to
-                            be used as the button label if value is 0.
     @param   degreeSym      If true, a degree symbol is drawn at the end of the
                             label.
+    @param   zeroString     If not nullptr, this points to a character string to
+                            be used as the button label if value is 0.
     @param   checkValue     If not nullptr, a pointer to a function that checks
                             a new button value and can return an adjusted value
                             if it is out of range.
@@ -133,9 +133,25 @@ public:
       uint16_t fillColor = 0, uint16_t textColor = 0,
       const char *textAlign = "C", Font_TT* f = nullptr, int16_t rCorner = 0,
       uint16_t value = 0, uint16_t minValue = 0, uint16_t maxValue = 0,
-      const char *zeroString = nullptr, bool degreeSym = false,
+      bool degreeSym = false, const char *zeroString = nullptr,
       uint16_t (*checkValue)(Button_TT_uint16 &btn, uint16_t value) = nullptr,
       uint8_t expU = 0, uint8_t expD = 0, uint8_t expL = 0, uint8_t expR = 0);
+
+  /**************************************************************************/
+  /*!
+    @brief    Get minimum valid button value.
+    @returns  The minimum valid button value.
+  */
+  /**************************************************************************/
+  uint16_t getMinValue(void) { return (_minValue); }
+
+  /**************************************************************************/
+  /*!
+    @brief    Get maximum valid button value.
+    @returns  The maximum valid button value.
+  */
+  /**************************************************************************/
+  uint16_t getMaxValue(void) { return (_maxValue); }
 
   /**************************************************************************/
   /*!

@@ -81,10 +81,10 @@ public:
     @brief    Constructor.
   */
   /**************************************************************************/
-  Button_TT_collection(void (*masterPressReleaseFunc)(bool press) = NULL) {
+  Button_TT_collection(void (*masterPressReleaseFunc)(bool press) = nullptr) {
     numRegisteredButtons = MAX_BUTTONS_IN_COLLECTION;
     pressedButton = MAX_BUTTONS_IN_COLLECTION;
-    masterPressRelease = NULL;
+    masterPressRelease = nullptr;
     clear();
   }
 
@@ -102,11 +102,11 @@ public:
                                       of a button with argument indicating a
                                       press (true) or release (false), e.g.
                                       this function might make a sound upon
-                                      button press, use NULL for none.
+                                      button press, use nullptr for none.
   */
   /**************************************************************************/
   void
-  registerMasterProcessFunc(void (*masterPressReleaseFunc)(bool press) = NULL) {
+  registerMasterProcessFunc(void (*masterPressReleaseFunc)(bool press) = nullptr) {
     masterPressRelease = masterPressReleaseFunc;
   }
 
@@ -136,9 +136,9 @@ public:
   /**************************************************************************/
   /*!
     @brief    Search registered buttons for one containing the point (x,y), and
-              if found, call masterPressRelease() if not NULL, call the button's
-              press() function, and then call the registered processPress()
-              function for that button.
+              if found, call masterPressRelease() if not nullptr, call the
+              button's press() function, and then call the registered
+              processPress() function for that button.
     @param    x             The X coordinate to check.
     @param    y             The Y coordinate to check.
     @returns  false if no button contains (x,y), else true.
@@ -147,7 +147,7 @@ public:
 
   /**************************************************************************/
   /*!
-    @brief    Call masterPressRelease() if not NULL, then call the release()
+    @brief    Call masterPressRelease() if not nullptr, then call the release()
               function for the last button pressed if any.
     @returns  false if no button was previously pressed, else true.
   */

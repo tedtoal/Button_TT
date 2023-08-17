@@ -454,7 +454,7 @@ void Button_TT_label::drawButton(bool inverted) {
     // (xStart, yBase) is the coords to set cursor to print the label
 
     int16_t xStart, yBase;
-    _f->getTextAlignCursor(_xL, _yT, _w, _h, dX, dY, wt, ht, _textAlign[1],
+    _f->getTextAlignCursor(dX, dY, wt, ht, _xL, _yT, _w, _h, _textAlign[1],
                            _textAlign[0], xStart, yBase);
 
     #if BUTTON_TT_DBG

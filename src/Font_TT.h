@@ -226,7 +226,7 @@ public:
   */
   /**********************************************************************/
   void charBounds(unsigned char c, int16_t* x, int16_t* y, int16_t* minX,
-                  int16_t* minY, int16_t* maxX, int16_t* maxY);
+    int16_t* minY, int16_t* maxX, int16_t* maxY);
 
   /**********************************************************************/
   /*!
@@ -306,7 +306,7 @@ public:
                   first string character's starting cursor x-position. Subtract
                   this from the left-side x-coordinate to get the starting
                   cursor position x-coordinate.
-    @param  dY    Like dX but for y-coordinate.
+    @param  dY    Like dX but for y-coordinate, from the top side of the string.
     @param  wt    Reference to variable whose value is set by this function to
                   the string's bounding rectangle width in pixels.
     @param  ht    Like wt but for the bounding rectangle's height in pixels.
@@ -343,7 +343,7 @@ public:
   */
   /**********************************************************************/
   void getTextBoundsAndOffset(const char* str, int16_t &dX, int16_t &dY,
-                     uint16_t &wt, uint16_t &ht, int16_t &dXcF);
+    uint16_t &wt, uint16_t &ht, int16_t &dXcF);
 
   /**********************************************************************/
   /*!
@@ -359,7 +359,7 @@ public:
   */
   /**********************************************************************/
   void getTextBoundsAndOffset(const String &str, int16_t &dX, int16_t &dY,
-                     uint16_t &wt, uint16_t &ht, int16_t &dXcF);
+    uint16_t &wt, uint16_t &ht, int16_t &dXcF);
 
   /**********************************************************************/
   /*!
@@ -374,8 +374,8 @@ public:
     @note         See getTextBoundsAndOffset(const char* str, ...)
   */
   /**********************************************************************/
-  void getTextBoundsAndOffset(const __FlashStringHelper* s, int16_t &dX,
-                     int16_t &dY, uint16_t &wt, uint16_t &ht, int16_t &dXcF);
+  void getTextBoundsAndOffset(const __FlashStringHelper* str, int16_t &dX,
+    int16_t &dY, uint16_t &wt, uint16_t &ht, int16_t &dXcF);
 
   /**********************************************************************/
   /*!
@@ -408,19 +408,14 @@ public:
   */
   /**********************************************************************/
   void newTextBoundsAndOffset(int16_t dX, int16_t dY, uint16_t wt, uint16_t ht,
-                              int16_t dXcF, int16_t dX2, int16_t dY2,
-                              uint16_t wt2, uint16_t ht2, int16_t dXcF2,
-                              int16_t &dYnew, uint16_t &wt_new,
-                              uint16_t &ht_new, int16_t &dXcFnew);
+    int16_t dXcF, int16_t dX2, int16_t dY2, uint16_t wt2, uint16_t ht2,
+    int16_t dXcF2, int16_t &dYnew, uint16_t &wt_new, uint16_t &ht_new,
+    int16_t &dXcFnew);
 
   /**********************************************************************/
   /*!
     @brief          Compute cursor start position to print a text string in the
                     requested horizontal/vertical alignment within a rectangle.
-    @param  xL      Rectangle left boundary X coordinate.
-    @param  yT      Rectangle top boundary Y coordinate.
-    @param  w       Rectangle width in pixels.
-    @param  h       Rectangle height in pixels.
     @param  dX      Delta x-coordinate from the left side of text string to the
                     first string character's starting cursor x-position,
                     returned by getTextBoundsAndOffset().
@@ -431,17 +426,94 @@ public:
                     getTextBoundsAndOffset().
     @param  ht      Text string bounding rectangle's height, returned by
                     getTextBoundsAndOffset().
-    @param  alignH  Desired text string horizontal alignment: 'L'=left,
-                    'C'=center, 'R'=right.
-    @param  alignV  Desired text string vertical alignment: 'T'=top, 'C'=center,
-                    'B'=bottom.
+    @param  xL      Rectangle left boundary X coordinate.
+    @param  yT      Rectangle top boundary Y coordinate.
+    @param  w       Rectangle width in pixels.
+    @param  h       Rectangle height in pixels.
+    @param  alignH  Text string horizontal alignment: L=left, C=center, R=right.
+    @param  alignV  Text string vertical alignment: T=top, C=center, B=bottom.
     @param  xC      Starting cursor x-coordinate is returned here.
     @param  yC      Starting cursor y-coordinate is returned here.
+    @note           For alignH alignment relative to the display itself, use 0
+                      for xL and the display width for w. Similarly for alignV
+                      alignment relative to the display, vertically, use 0 for
+                      yT and display height for h.
   */
   /**********************************************************************/
-  void getTextAlignCursor(int16_t xL, int16_t yT, uint16_t w, uint16_t h,
-                          int16_t dX, int16_t dY, uint16_t wt, uint16_t ht,
-                          char alignH, char alignV, int16_t &xC, int16_t &yC);
+  void getTextAlignCursor(int16_t dX, int16_t dY, uint16_t wt, uint16_t ht,
+    int16_t xL, int16_t yT, uint16_t w, uint16_t h, char alignH, char alignV,
+    int16_t &xC, int16_t &yC);
+
+  /**********************************************************************/
+  /*!
+    @brief          Like getTextAlignCursor() above except instead of the first
+                      four arguments provided via getTextBoundsAndOffset(), this
+                      has the text string argument itself as a const char*.
+    @param  str     The text string to be printed.
+    @param  xL      Rectangle left boundary X coordinate.
+    @param  yT      Rectangle top boundary Y coordinate.
+    @param  w       Rectangle width in pixels.
+    @param  h       Rectangle height in pixels.
+    @param  alignH  Text string horizontal alignment: L=left, C=center, R=right.
+    @param  alignV  Text string vertical alignment: T=top, C=center, B=bottom.
+    @param  xC      Starting cursor x-coordinate is returned here.
+    @param  yC      Starting cursor y-coordinate is returned here.
+    @note           For alignH alignment relative to the display itself, use 0
+                      for xL and the display width for w. Similarly for alignV
+                      alignment relative to the display, vertically, use 0 for
+                      yT and display height for h.
+  */
+  /**********************************************************************/
+  void getTextAlignCursor(const char* str, int16_t xL, int16_t yT, uint16_t w,
+    uint16_t h, char alignH, char alignV, int16_t &xC, int16_t &yC);
+
+  /**********************************************************************/
+  /*!
+    @brief          Like getTextAlignCursor() above except instead of the first
+                      four arguments provided via getTextBoundsAndOffset(), this
+                      has the text string argument itself as a const String.
+    @param  str     The text string to be printed.
+    @param  xL      Rectangle left boundary X coordinate.
+    @param  yT      Rectangle top boundary Y coordinate.
+    @param  w       Rectangle width in pixels.
+    @param  h       Rectangle height in pixels.
+    @param  alignH  Text string horizontal alignment: L=left, C=center, R=right.
+    @param  alignV  Text string vertical alignment: T=top, C=center, B=bottom.
+    @param  xC      Starting cursor x-coordinate is returned here.
+    @param  yC      Starting cursor y-coordinate is returned here.
+    @note           For alignH alignment relative to the display itself, use 0
+                      for xL and the display width for w. Similarly for alignV
+                      alignment relative to the display, vertically, use 0 for
+                      yT and display height for h.
+  */
+  /**********************************************************************/
+  void getTextAlignCursor(const String &str, int16_t xL, int16_t yT, uint16_t w,
+    uint16_t h, char alignH, char alignV, int16_t &xC, int16_t &yC);
+
+  /**********************************************************************/
+  /*!
+    @brief          Like getTextAlignCursor() above except instead of the first
+                      four arguments provided via getTextBoundsAndOffset(), this
+                      has the text string argument itself as a const
+                      __FlashStringHelper*.
+    @param  str     The text string to be printed.
+    @param  xL      Rectangle left boundary X coordinate.
+    @param  yT      Rectangle top boundary Y coordinate.
+    @param  w       Rectangle width in pixels.
+    @param  h       Rectangle height in pixels.
+    @param  alignH  Text string horizontal alignment: L=left, C=center, R=right.
+    @param  alignV  Text string vertical alignment: T=top, C=center, B=bottom.
+    @param  xC      Starting cursor x-coordinate is returned here.
+    @param  yC      Starting cursor y-coordinate is returned here.
+    @note           For alignH alignment relative to the display itself, use 0
+                      for xL and the display width for w. Similarly for alignV
+                      alignment relative to the display, vertically, use 0 for
+                      yT and display height for h.
+  */
+  /**********************************************************************/
+  void getTextAlignCursor(const __FlashStringHelper* str, int16_t xL,
+    int16_t yT, uint16_t w, uint16_t h, char alignH, char alignV, int16_t &xC,
+    int16_t &yC);
 
 }; // class Font_TT
 

@@ -40,7 +40,7 @@ void Button_TT_uint8::initButton(
     Adafruit_GFX *gfx, const char *align, int16_t x, int16_t y, int16_t w,
     int16_t h, uint16_t outlineColor, uint16_t fillColor, uint16_t textColor,
     const char *textAlign, Font_TT* f, int16_t rCorner, uint8_t value,
-    uint8_t minValue, uint8_t maxValue, const char *zeroString, bool degreeSym,
+    uint8_t minValue, uint8_t maxValue, bool degreeSym, const char *zeroString,
     uint8_t (*checkValue)(Button_TT_uint8 &btn, uint8_t value), uint8_t expU,
     uint8_t expD, uint8_t expL, uint8_t expR) {
 

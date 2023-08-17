@@ -139,6 +139,22 @@ public:
 
   /**************************************************************************/
   /*!
+    @brief    Get minimum valid button value.
+    @returns  The minimum valid button value.
+  */
+  /**************************************************************************/
+  int16_t getMinValue(void) { return (_minValue); }
+
+  /**************************************************************************/
+  /*!
+    @brief    Get maximum valid button value.
+    @returns  The maximum valid button value.
+  */
+  /**************************************************************************/
+  int16_t getMaxValue(void) { return (_maxValue); }
+
+  /**************************************************************************/
+  /*!
     @brief    Get current button label int16_t value.
     @returns  The current int16_t value of the button.
   */

@@ -48,12 +48,12 @@
 */
 #include <Arduino.h>
 #include <Adafruit_GFX.h>
-#include <Adafruit_ILI9341.h>
 #include <Fonts/FreeSans12pt7b.h>
 #include <Font_TT.h>
 #include <Button_TT.h>
 #include <Button_TT_label.h>
 #include <Button_TT_collection.h>
+#include <Adafruit_ILI9341.h>
 #include <XPT2046_Touchscreen_TT.h>
 #include <TS_Display.h>
 #include <monitor_printf.h>
@@ -220,8 +220,6 @@ void setup() {
   // initialize the LCD display.
   monitor.printf("LCD\n");
   lcd = new Adafruit_ILI9341(LCD_CS_PIN, LCD_DC_PIN);
-  pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
-  digitalWrite(LCD_BACKLIGHT_PIN, LCD_BACKLIGHT_ON);
   MSsinceLastTouchBeforeBacklight = LCD_BACKLIGHT_AUTO_OFF_MS * 1000;
   MSatLastBacklightTimerUpdate = millis();
   lcd->begin();
@@ -229,6 +227,8 @@ void setup() {
   lcd->setTextColor(ILI9341_BLUE);
   lcd->setTextSize(1);
   lcd->setTextWrap(false);
+  pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
+  digitalWrite(LCD_BACKLIGHT_PIN, LCD_BACKLIGHT_ON);
 
   // Create and initialize touchscreen object, same rotation as lcd.
   monitor.printf("Touch\n");

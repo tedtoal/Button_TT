@@ -113,7 +113,7 @@ public:
     @param    minValue      The minimum allowed value for value.
     @param    maxValue      The maximum allowed value for value.
     @param    degreeSym     If true, a degree symbol is drawn at the end of the
-                            label .
+                            label.
     @param    showPlus      If true, a leading + is used for positive values in
                             the label.
     @param    checkValue    If not nullptr, a pointer to a function that checks
@@ -134,6 +134,22 @@ public:
       bool degreeSym = false, bool showPlus = false,
       int8_t (*checkValue)(Button_TT_int8 &btn, int8_t value) = nullptr,
       uint8_t expU = 0, uint8_t expD = 0, uint8_t expL = 0, uint8_t expR = 0);
+
+  /**************************************************************************/
+  /*!
+    @brief    Get minimum valid button value.
+    @returns  The minimum valid button value.
+  */
+  /**************************************************************************/
+  int8_t getMinValue(void) { return (_minValue); }
+
+  /**************************************************************************/
+  /*!
+    @brief    Get maximum valid button value.
+    @returns  The maximum valid button value.
+  */
+  /**************************************************************************/
+  int8_t getMaxValue(void) { return (_maxValue); }
 
   /**************************************************************************/
   /*!
