@@ -1207,9 +1207,9 @@ void drawCurrentScreen() {
 }
 ```
 
-Notice that *drawCalibrationScreen()* has an argument, unlike the typical screen draw function. We use this in a later section because we need to redraw the calibration screen multiple times from different calibration states.
+Notice that *drawCalibrationScreen()* has an argument, unlike the typical screen draw function that has none. We use this in a later section because we need to redraw the calibration screen multiple times from different calibration states.
 
-Finally, the code is cleaner when a function is used to handle a screen's processing tasks when the Arduino *loop()* function is called. Declare one function for handling loop() processing tasks each screen, then define a function that calls the loop() processing function for the current screen:
+Finally, the code is cleaner when a function is used to handle a screen's processing tasks each time the Arduino *loop()* function is called. Declare one function for each screen to handle loop() processing tasks, then define a function that calls the function for the current screen:
 
 ```
 // Declare functions for handling loop() processing tasks for each screen.
@@ -1312,14 +1312,22 @@ void loopMainScreen() {
 }
 ```
 
-Within *setup()*, screens must be initialized, *currentScreen* must be initialized to the desired the initial screen, and the current screen must be drawn:
+Within *setup()*, all screens must be initialized, the *currentScreen* variable must be initialized to the desired the initial screen, and the current (initially shown) screen must be drawn. Recall the earlier discussion of screen layout and the need to force immediate display of a particular screen on whose layout you are working. This can be accomplished by defining, near the top of the .ino file, a constant whose value is the desired initial screen:
+
+```
+// Initial screen to be displayed at startup. Normally SCREEN_MAIN, but set this to other
+// values to display a different screen initially, when working on its layout.
+#define INITIAL_SCREEN  SCREEN_MAIN
+```
+
+Then, add this code to *setup()* to initialize screens:
 
 ```
   // Initialize the display screens.
   initScreens();
 
   // Set the initial screen to be displayed and draw it.
-  currentScreen = SCREEN_MAIN;
+  currentScreen = INITIAL_SCREEN;
   drawCurrentScreen();
 ```
 
@@ -1330,9 +1338,25 @@ The final element of the design pattern is to call *loopCurrentScreen()* from th
   loopCurrentScreen();
 ```
 
+The call to *processTapsAndReleases()* remains in *loop()*.
+
+Another useful design pattern for organizing the code for multiple screens is to put each screen together in one section of the file, or perhaps in its own separate file. That section would contain (in roughly this order):
+
+> 1. Definitions of screen button variables.
+>
+> 2. The *initXxxxScreen()* function to initialize the screen, including the button variables.
+>
+> 3. Button tap handler functions. Sometimes it makes more sense to declare these functions here and define them after the *drawXxxxScreen()* function.
+>
+> 4. Special *draw* functions for buttons requiring specialized or more complex screen drawing than a simple call to *drawButton()*.
+>
+> 5. The *drawXxxxScreen()* function to draw the screen and register screen buttons.
+>
+> 6. The *loopXxxxScreen()* function to handle *loop()* processing for the screen.
+
 ## Adding a touchscreen calibration screen
 
-In this section we add code to implement a touchscreen calibration screen to the design pattern code of the previous section.
+In this section we add code to implement a touchscreen calibration screen. The code is drawn from example touchscreen calibration program *TS_DisplayCalibrate.ino* in the XPT_2046_Touchscreen_TT library *examples* directory.
 
 There are four int16_t values that are part of the *ts_display* touchscreen-display object that provide the calibration for mapping touchscreen coordinates to display coordinates. These values must be made part of the non-volatile settings structure, copying their names and types from *TS_Display.h* to this struct:
 
@@ -1348,7 +1372,18 @@ struct nonvolatileSettings {
 };
 ```
 
-There must be a way for the user to get to the calibration screen. We add a new *Calibrate* button to the main screen:
+Recall that the *defaults* variable, of type *nonvolatileSettings*, holds the default settings to use when settings must be initialized in fresh EEPROM. These initial values can't be hard-coded in the definition of *defaults* as can many settings. Instead, in *setup()* just before it uses *defaults* to read the settings from EEPROM, the *current calibration variable settings* established by the *ts_display* object when it was created are read into *defaults* using the *getTS_calibration()* function:
+
+```
+  // Make 'defaults' hold the default non-volatile settings when the settings
+  // are first initialized. Here, we load it with the initial calibration
+  // settings from ts_display.
+  ts_display->getTS_calibration(&defaults.TS_LR_X, &defaults.TS_LR_Y, &defaults.TS_UL_X,
+    &defaults.TS_UL_Y);
+  #endif
+```
+
+There must be a way for the user to get to the calibration screen from the main screen. We add a new *Calibrate* button to the main screen:
 
 ```
 // A labelled button whose name is "Calibrate".
@@ -1361,7 +1396,9 @@ void btnTap_Calibrate(Button_TT& btn) {
 }
 ```
 
-We will add two more constants to the section of constants to be used in *initButton()* calls, to provide a "standard" button size that might be used for many screen buttons:
+That is all that's required to switch screens: change the value of *currentScreen* and call the screen *draw* function.
+
+Next, add two more constants to the section of constants used in *initButton()* calls, to provide a "standard" button size that might be used for many screen buttons:
 
 ```
 // Define a "standard" button width and height.
@@ -1377,7 +1414,7 @@ An *initButton()* call for the new *Calibrate* button is added to *initMainScree
     ILI9341_PINK, ILI9341_BLACK, "C", "Calibrate", false, &font12, RAD);
 ```
 
-Calls to *drawButton()* and *registerButton()* are added to *drawMainScreen()*:
+Calls to *drawButton()* and *registerButton()* for the *Calibrate* button are added to *drawMainScreen()*:
 
 ```
   btn_Calibrate.drawButton();
@@ -1392,7 +1429,7 @@ The calibration screen itself will have four buttons:
 >
 > 3. A "Cancel" button, always visible on this screen
 >
-> 4. A "Save" button, only displayed once user has tapped two screen corners for calibration
+> 4. A "Save" button, only displayed once the user has tapped the "+" on two screen corners for calibration
 
 The button variable definitions:
 
@@ -1405,7 +1442,7 @@ Button_TT_label btn_CalibrationSave("CalibrationSave");
 
 Note that "Calibration" is included as part of the button name, since it is quite possible other screens will have similarly-named buttons.
 
-Some more constants are added to the section of constants to be used when calling *initButton()*:
+More constants are added to the section of constants to be used when calling *initButton()*:
 
 ```
 // Negative button width/height values to use when creating buttons for the LCD
@@ -1428,9 +1465,9 @@ Some more constants are added to the section of constants to be used when callin
 #define EXP_H 50  // Huge expansion of button
 ```
 
-The six constants whose name ends with "EW" (edge width) are used to define button sizes. The *initButton()* arguments *w* and *h* can be positive constants giving the button pixel width and height. Alternatively, they can be negative values to signal that the size of the button is to be computed automatically based on the maximum size of the text string that will be displayed within the button. The "EW" constants all have negative values for this purpose. The (absolute value of the) negative value is *added to the automatically computed button width or height. For example, if *w* is set to *SEW* (= -5), then if the button width is computed to be 87 pixels based on the text in the button, then the actual button size will be set to 87 + 5 = 92 pixels. For accurate automatic sizing, it is crucial that for Button_TT_label type buttons you use the largest expected text string as the button label when calling *initButton()*. After *initButton()* returns, the actual label can be changed to the desired initial label by calling *setLabel()*. For integer-value buttons, the maximum text size is computed automatically using the known button *minValue* and *maxValue* settings.
+The six constants whose name ends with "EW" (edge width) are used to define button sizes. The *initButton()* arguments *w* and *h* can be positive constants giving the button pixel width and height. Alternatively, they can be negative values to signal that the size of the button is to be computed automatically based on the maximum size of the text string that will be displayed within the button. The "EW" constants all have negative values for this purpose. The (absolute value of the) negative value is *added to the automatically computed button width or height. For example, if *w* is set to *SEW* (= -5), then if the button width is computed to be 87 pixels based on the text in the button, then the actual button size will be set to 87 + 5 = 92 pixels. For accurate automatic sizing, it is crucial that for Button_TT_label type buttons the largest expected text string is used as the initial label when calling *initButton()*. After *initButton()* returns, the actual label can be changed to the desired initial label by calling *setLabel()*. For integer-value buttons, the maximum text size is computed automatically using the known button *minValue* and *maxValue* settings.
 
-The five constants whose name starts with "EXP_" (expansion) are used with the last four arguments to each *initButton()* function, *expU*, *expD*, *expL*, and *expR*. As described earlier, these allow the actual button size to be increased when the *screenButtons* object tests a touched position to see if it lies within a button. 
+The five constants whose name starts with "EXP_" (expansion) are used with the last four arguments to each *initButton()* function, *expU*, *expD*, *expL*, and *expR*. As described earlier, these allow the actual button size to be increased to obtain the button rectangle tested by the *screenButtons* object to see if it contains a tapped point.
 
 The *initCalibrationScreen()* function is defined next. It calls *initButton()* for each of the four buttons:
 
@@ -1449,9 +1486,9 @@ void initButtons_CalibrationScreen(void) {
 }
 ```
 
-Notice that the label_Calibration and label_Touch button outlines and fill colors are set to *TRANSPARENT_COLOR* so the button text will appear on the screen background with no surrounding rectangle. If the text were not fixed and the screen were not being completely redrawn whenever the text was changed, it would be necessary to use the screen background color instead of *TRANSPARENT_COLOR*.
+Notice that the *label_Calibration* and *label_Touch* button outlines and fill colors are set to *TRANSPARENT_COLOR* so the button text will appear on the screen background with no surrounding rectangle. If the text were not fixed and the screen were not being completely redrawn whenever the text was changed, it would be necessary to use the screen background color instead of *TRANSPARENT_COLOR*.
 
-Calibration requires that a "+" sign be drawn in two screen corners and then the user must click carefully on them. Define a function to draw the "+" signs:
+Calibration requires that a "+" sign be drawn one at a time in opposite screen corners, and the user must click carefully on them. Define a function to draw the "+" signs:
 
 ```
 // Length of each arm of "+" sign.
@@ -1486,19 +1523,9 @@ void btnTap_CalibrationSave(Button_TT& btn) {
 }
 ```
 
-DONT FORGET
+These two functions use the *ts_display* functions *setTS_calibration()* and *getTS_calibration()*, the former to restore the original calibration settings when the user taps *Cancel*, and the latter to retrieve the new calibration settings into *NVsettings* when the user taps *Save*.
 
-```
-#if SELECT >= 9
-  // Make 'defaults' hold the default non-volatile settings when the settings
-  // are first initialized. Here, we load it with the initial calibration
-  // settings from ts_display.
-  ts_display->getTS_calibration(&defaults.TS_LR_X, &defaults.TS_LR_Y, &defaults.TS_UL_X,
-    &defaults.TS_UL_Y);
-  #endif
-```
-
-The workhorse of the calibration screen is a state machine operated in function *loopCalibrationScreen()* that waits for the user to tap on each "+" sign. After he taps them in opposing corners of the display, the calibration parameters are computed and become the new parameters for translating screen taps to display coordinates. The user can then tap the screen further to test the new calibration, with a "+" sign drawn at each tapped position. If satisfied he can tap "Save" to save the new calibration or "Cancel" to revert back to the previous one. This state machine code is taken from *TS_DisplayCalibrate.ino* in the *XPT_2046_Touchscreen_TT* library, the main difference being that here we implement the "Tap the +" message using a label button rather than writing screen text directly.
+The workhorse of the calibration screen is a state machine, operated in the *loopCalibrationScreen()* function, that waits for the user to tap on each "+" sign. After he taps them in opposing corners of the display, the calibration parameters are computed and become the new parameters for translating screen taps to display coordinates. The user can then tap the screen further to test the new calibration, with a "+" sign drawn at each tapped position. If satisfied he can tap "Save" to save the new calibration or "Cancel" to revert back to the previous one. This state machine code is taken from *TS_DisplayCalibrate.ino* in the *XPT_2046_Touchscreen_TT* library, the main difference being that here we implement the "Tap the +" message using a label button rather than writing screen text directly.
 
 Define an enum of the states and a variable that holds the current state:
 
@@ -1517,6 +1544,8 @@ typedef enum _eCalibState {
 eCalibState calibState;
 ```
 
+The state machine starts in the *STATE_WAIT_UL* state when the *Calibration* screen is first drawn, and proceeds sequentially through the listed states, alternating between the last two until either *Cancel* or *Save* is tapped.
+
 Also define variables to hold upper-left and lower-right calibration tap positions and the corresponding touchscreen positions:
 
 ```
@@ -1526,14 +1555,14 @@ int16_t x_UL, y_UL, x_LR, y_LR;
 int16_t TSx_UL, TSy_UL, TSx_LR, TSy_LR;
 ```
 
-The *drawCalibrationScreen()* function is now defined. Unlike our previous screen draw functions, this one has an argument, *state*, that defaults to 1. The function is called from the "Calibrate" button handler of the main screen using the default argument value of 1, which draws the initial calibration screen including the first "+" to be tapped, and sets *calibState* to the initial value of *STATE_WAIT_UL*. Then, it is called two more times, once after the user taps the first "+", to redraw the calibration screen including the second "+", and then again to redraw it with no "+" and drawing the *Save* button for the first time. The *state* argument also changes the label and position of the *CalibrateTouch* button.
+The *drawCalibrationScreen()* function is defined next. Unlike our previous screen draw functions, this one has an argument, *state*, that defaults to 1. The function is called from the "Calibrate" button handler of the main screen using the default argument value of 1, which draws the initial calibration screen including the first "+" to be tapped, and sets *calibState* to the *STATE_WAIT_UL* initial state. It is subsequently called *two more times* (resulting in a complete re-draw of the screen), once after the user taps the first "+", to redraw the calibration screen with the second "+", and then again to redraw it with no "+" and drawing the *Save* button for the first time. The *state* argument also influences the label and position of the *CalibrateTouch* button.
 
 ```
 // Draw the Calibration screen and register its buttons with the screenButtons
 // object. Argument "state" defaults to 1 and is either 1, 2, or 3:
 //      1: initial display, draw first +, "tap +", no Save, set STATE_WAIT_UL
 //      2: finished STATE_WAIT_UL_RELEASE, draw second +, "tap +", no Save
-//      3: finished STATE_WAIT_LR_RELEASE, draw no +, draw Save, "tap to test"
+//      3: finished STATE_WAIT_LR_RELEASE, draw no +, "tap to test", draw Save
 void drawCalibrationScreen(int state) {
 
   // Clear all existing button registrations.
@@ -1547,8 +1576,11 @@ void drawCalibrationScreen(int state) {
   ts_display->GetCalibration_UL_LR(PLUS_ARM_LEN+2, &x_UL, &y_UL, &x_LR, &y_LR);
 
   // Draw and register screen buttons.
+
+  // Calibrate label.
   label_Calibration.drawButton();
 
+  // "Touch ..." instruction label
   label_Touch.setLabel(state == 3 ? "Tap to test calibration" : "Tap the +");
   int16_t xL, yT;
   if (state == 1) {
@@ -1564,9 +1596,11 @@ void drawCalibrationScreen(int state) {
   label_Touch.setPosition(xL, yT);
   label_Touch.drawButton();
 
+  // Cancel button.
   btn_CalibrationCancel.drawButton();
   screenButtons->registerButton(btn_CalibrationCancel, btnTap_CalibrationCancel);
 
+  // Save button.
   if (state == 3) {
     btn_CalibrationSave.drawButton();
     screenButtons->registerButton(btn_CalibrationSave, btnTap_CalibrationSave);
@@ -1578,17 +1612,17 @@ void drawCalibrationScreen(int state) {
   else if (state == 2)
     drawPlus(x_LR, y_LR, ILI9341_BLUE);
 
-  // When state = 1, we must initialize calibState because this happens when
-  // user taps "Calibrate" button in main screen, and we need to restart the
-  // calibration state machine.
+  // When state = 1, we must initialize calibState because state=1 means the
+  // user tapped the "Calibrate" button in the main screen, and we need to
+  // restart the calibration state machine.
   if (state == 1)
     calibState = STATE_WAIT_UL;
 }
 ```
 
-Besides the twist of adding an argument to *drawCalibrationScreen()* so the function can be used to redraw the screen multiple times during calibration, there are a couple other new features. The *label_Touch* button label varies depending on the *state* argument, and the button is moved around on the screen by calling its *setPosition()* function. The position depends on the value of the *state* argument. To compute the position, the *getLeft()*, *getWidth()*, and *getHeight()* functions are used to get the left-side x-coordinate and width and height of a button. *getTop()* is also available to get the top-side y-coordinate. The left side of the *Save* button is used as a convenient reasonable place to put the "Tap the +" label when the "+" is in the lower-right corner. The *drawPlus()* function is also used, illustrating how a screen drawing function is not limited to drawing buttons!
+Besides the twist of adding an argument to *drawCalibrationScreen()* so the function can be used to redraw the screen multiple times during calibration, there are a couple other new features to notice here. The *label_Touch* button label varies depending on the *state* argument, and the button is moved around on the screen by calling its *setPosition()* function, the position also depending on the value of the *state* argument. To compute the position, the *getLeft()*, *getWidth()*, and *getHeight()* functions are used to get the left-side x-coordinate and width and height of a button. *getTop()* is also available to get the top-side y-coordinate. The left side of the *Save* button is used as a convenient reasonable place to put the "Tap the +" label when the "+" is in the lower-right corner. The *drawPlus()* function is also used, illustrating how a screen drawing function is not limited to drawing buttons! Finally, the *Save* button isn't drawn until state=3.
 
-The final function to define for the Calibration screen is *loopCalibrationScreen()*, which runs the state engine. This function tests for touchscreen touches independently of and in parallel with *processTapsAndReleases()*. This uses the previously-defined *playSound()* function to play a sound when the "+" is touched.
+The final function to define for the Calibration screen is *loopCalibrationScreen()*, which runs the state machine. This function tests for touchscreen touches using the *touch* object's *touched()* function **independently of and in parallel with** *processTapsAndReleases()*. It uses the previously-defined *playSound()* function to play a sound when the "+" is touched.
 
 ```
 // Handle loop() processing for the calibration screen.
@@ -1638,12 +1672,13 @@ void loopCalibrationScreen() {
     if (!isTouched) {
       // Stop sound.
       playSound(false);
-      // Map the two touchscreen points to the correct calibration values at the
-      // extreme ends of the display. Set resulting calibration parameters as the
-      // new calibration parameters in ts_display.
+      // Map the two tapped touchscreen points to the correct calibration values
+      // at the extreme ends of the display.
       int16_t TS_LR_X, TS_LR_Y, TS_UL_X, TS_UL_Y;
       ts_display->findTS_calibration(x_UL, y_UL, x_LR, y_LR, TSx_UL, TSy_UL, TSx_LR, TSy_LR,
         &TS_LR_X, &TS_LR_Y, &TS_UL_X, &TS_UL_Y);
+      // Set resulting calibration parameters as the new calibration parameters
+      // in ts_display.
       ts_display->setTS_calibration(TS_LR_X, TS_LR_Y, TS_UL_X, TS_UL_Y);
       // Redraw the screen with no +.
       drawCalibrationScreen(3);
@@ -1678,11 +1713,19 @@ void loopCalibrationScreen() {
 }
 ```
 
-## Using button values
+Some function calls to note above are the *touch* object's *getPoint()* to retrieve the current screen (x,y) coordinates being touched, and three functions of the *ts_display* object: *findTS_calibration()* performs the actual calibration work by determining which calibration parameter values will map the touchscreen (x,y) coordinates into the corresponding display (x,y) coordinates, *setTS_calibration()* sets those new calibration parameter values as the ones currently in use, and *mapTStoDisplay()* maps a touchscreen (x,y) coordinate into a corresponding display (x,y) coordinate using the current calibration parameters.
 
-How is a button *used* within the program? Some buttons perform actions immediately upon being tapped, such as the "Cancel" and "Save" buttons in the previous section. Others are simply labels that don't change. Some buttons may be values that *do change*, such as buttons that hold and display integer values displayed. A simple text label button could also change its label. For example, maybe a thermostat mode button changes its label between "Off", "On", and "Auto" each time it is tapped. How does a program *access* these button values when it needs them? For integer-valued buttons the code would call the button *getValue()* function to obtain the current value. For label buttons, it could call the *getLabel()* function, but a better method might be to use an enum to represent the possible text strings the button can display, with a variable holding the current enum value, and each time the button is pressed, the enum value is advanced and the new value translated into a string that is set as the new button text by calling *setLabel()*. Then, the button value is always available in the enum variable.
+## Accessing and using button values
 
-When buttons are initialized, they must be set to their initial values. Rather than coding a fixed value in the *initButton()* call, the value might instead come from a variable, such as for example the *NVsettings* variable used in a section above to illustrate use of EEPROM to store program settings. Another method is to initialize the button to a fixed value (such as for example its longest possible string, if the button is being auto-sized), and after *initButton()* returns, call *setLabel()* to set the actual desired initial label, or call *setValue()* to set the desired initial value of integer-valued buttons.
+How is a button *used* within the program? Some buttons perform actions immediately upon being tapped, such as the "Cancel" and "Save" buttons in the previous section. Others are simply labels that don't change. Some buttons may have values that *do change*, such as those that hold and display integer values. A simple text label button could also *change* its label. For example, maybe a thermostat mode button changes its label between "Off", "On", and "Auto" each time it is tapped.
+
+How does a program *access* these button values when it needs them? For integer-valued buttons the code would call the button *getValue()* function to obtain the current integer value. For label buttons, it *could* call the *getLabel()* function to get the current text string value. However, for many label buttons, a better method might be to use an enum to represent the possible text string values the button can have, with a variable holding the current enum value, and each time the button is pressed, the enum value is advanced and the new value is translated into a string that is set as the new button text by calling *setLabel()*. Then, the button value is always available in the enum variable.
+
+To change a button's value in response to some event (such as a tap of another button, or *any* event), the button *setLabel()* function is called for label buttons, or *setValue()* for integer buttons. The functions *setLabelAndDrawIfChanged()* and *setValueAndDrawIfChanged()* can also be used. These combine the setting of the new button value with a call to *drawButton()*, but the button is only drawn if the value actually changed, which avoids needless flickering of the display.
+
+There is also a *drawIfChanged()* button. Each button uses a flag to track whether a change has been made to any aspect of its state that affects the way it is drawn, whether it be a change of value, color, or position for example. *drawIfChanged()* only draws the button if that flag has been set. Drawing the button at any time clears the flag. *drawIfChanged()* as well as *setLabelAndDrawIfChanged()* and *setValueAndDrawIfChanged()* all have a boolean argument named *forceDraw* that defaults to false, but if set true by the caller, forces the function to draw the button even if the "changed" flag is not set. This is useful when it is necessary to force draw a button when its screen is initially drawn, but subsequently to only draw it when the change flag has been set.
+
+When buttons are initialized, they must be set to their initial values. Rather than coding a fixed value in the *initButton()* call, the value might instead come from a variable, such as for example the *NVsettings* variable used in a section above to illustrate use of EEPROM to store program settings. Another method is to initialize the button to a fixed value (such as for example to its longest possible string, if the button is being auto-sized), and after *initButton()* returns, call *setLabel()* to set the desired initial label, or call *setValue()* to set the desired initial value of integer-valued buttons.
 
 ## Creating new button styles: a button class with a "+" in it
 
@@ -1690,7 +1733,7 @@ You may find that you need button functionality that is not part of the *Button_
 
 The *Button_TT* class is the base class for all buttons. There are two classes that derive from it. First is *Button_TT_label*, which implements buttons with labels. The integer-valued buttons derive from that class, since the integer value becomes a text label for the button. Second is *Button_TT_arrow*, which implements triangular buttons with no labels. If you wish to create a new button class, one good starting point is to  copy either *Button_TT_uint8.h/.cpp* (to make a labelled button class) or *Button_TT_arrow.h/.cpp* (to make an unlabelled button type) to new file names and edit them, removing the code specific to that class and adding new code for your new button class.
 
-In this example, we will create a button class that draws a "+" in the middle of the button. It can be used to replace the manual drawing of the "+" sign in the calibrate code shown previously. There is no strong need for this class, but it provides a convenient way to illustrate how to create a button that draws itself differently. Here is the code, deriving the new class from *Button_TT*:
+In this example, we will create a button class that draws a "+" in the middle of the button. There is no strong need for this class, but it could be used to replace the manual drawing of the "+" sign in the calibrate code shown previously, for example. This example provides a convenient way to illustrate how to create a button that draws itself differently. Here is the code, deriving a new class named *Button_TT_plus* from *Button_TT*:
 
 ```
 // A new class for a square button containing a "+" in the middle. The width and
@@ -1783,7 +1826,7 @@ void Button_TT_plus::drawButton(bool inverted) {
 }
 ```
 
-It is left as an exercise to change the touchscreen calibration code presented above to use this new style of button, perhaps in place of drawing the "+" with draw function calls.
+It is left as an exercise to change the code presented above to use this new style of button, perhaps simply as an additional button on the *main screen* or perhaps in place of drawing the "+" with draw function calls on the *calibration screen*.
 
 ## Contact
 
