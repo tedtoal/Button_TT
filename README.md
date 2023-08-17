@@ -4,6 +4,14 @@
 
 The ***Button_TT*** library defines classes and functions for drawing buttons on a pixel display. Support is included for various types of buttons, as well as button hit-testing. This lengthy document describes in detail how to use the library.
 
+-------------------------
+### Table of Contents
+
+[Required additional libraries](https://github.com/tedtoal/Button_TT/edit/main/README.md#required-additional-libraries)
+[Introductory code without touchscreen](https://github.com/tedtoal/Button_TT/edit/main/README.md#introductory-code-without-touchscreen)
+
+-------------------------
+
 ## Required additional libraries
 
 The *Button_TT* library uses the *Adafruit_GFX_Library* graphics library, which requires a display with a controller object class that is derived (directly or indirectly) from class *Adafruit_GFX*. Many low-cost displays use the ILI9341 controller, which can use library *Adafruit_ILI9341* for this purpose. *You must install the **Adafruit_GFX_Library** library on your system **and** a compatible display controller library such as **Adafruit_ILI9341***. Also, typically your display will include a touchscreen, and to make use of it an additional library is required, **XPT2046_Touchscreen_TT**, which requires that your touchscreen use the XPT2046 controller (many low-cost touchscreens do).
